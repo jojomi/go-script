@@ -1,0 +1,1 @@
+/home/johannes/dev/go/src/github.com/jojomi/go-script/test/dir/dir.txt

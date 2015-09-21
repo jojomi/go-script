@@ -12,6 +12,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/termie/go-shutil"
@@ -24,8 +25,8 @@ type Context struct {
 	workingDir       string
 	lastProcessState *os.ProcessState
 	lastProcessError error
-	stdoutBuffer     bytes.Buffer
-	stderrBuffer     bytes.Buffer
+	stdoutBuffer     *bytes.Buffer
+	stderrBuffer     *bytes.Buffer
 }
 
 // NewContext returns a pointer to a new Context.
@@ -56,15 +57,12 @@ func (c *Context) WorkingDir() string {
 
 // CommandPath finds the full path of a binary given its name.
 func (c *Context) CommandPath(name string) string {
-	count := 0
-	for count < 10 {
-		count++
-		c.ExecuteFullySilent("which", name)
-		if output := strings.Trim(c.LastOutput().String(), "\n"); output != "" {
-			return output
-		}
+	cmd := exec.Command("which", name)
+	cmdOutput, err := cmd.Output()
+	if err != nil {
+		return ""
 	}
-	return ""
+	return strings.Trim(string(cmdOutput), "\n")
 }
 
 // CommandExists checks if a given binary exists in PATH.
@@ -75,7 +73,7 @@ func (c *Context) CommandExists(name string) bool {
 // MustCommandExist ensures a given binary exists in PATH, otherwise panics.
 func (c *Context) MustCommandExist(name string) {
 	if !c.CommandExists(name) {
-		panic(fmt.Errorf("Command %s is not available. Please make sure it is installed and accessible. Ouptut of which: %s", name, c.LastOutput().String()))
+		panic(fmt.Errorf("Command %s is not available. Please make sure it is installed and accessible. Ouptut of which: %s", name, c.LastOutput()))
 	}
 }
 
@@ -104,7 +102,7 @@ func (c *Context) DirExists(path string) bool {
 
 // MustDirExist checks if a given filename exists (being a directory).
 func (c *Context) MustDirExist(path string) {
-	if !c.FileExists(path) {
+	if !c.DirExists(path) {
 		panic(fmt.Errorf("Directory %s does not exist.", path))
 	}
 }
@@ -242,7 +240,7 @@ func (c *Context) CopyDir(src, dst string) error {
 
 // ExecuteNormal execute a system command, stdout and stderr are output just
 // normally
-func (c *Context) ExecuteNormal(name string, args ...string) (err error) {
+func (c *Context) ExecuteDebug(name string, args ...string) (err error) {
 	err = c.Execute(false, false, name, args...)
 	return
 }
@@ -263,7 +261,7 @@ func (c *Context) ExecuteFullySilent(name string, args ...string) (err error) {
 }
 
 // MustExecute ensures a system command to be executed, otherwise panics
-func (c *Context) MustExecute(name string, args ...string) {
+func (c *Context) MustExecuteDebug(name string, args ...string) {
 	err := c.Execute(false, false, name, args...)
 	if err != nil {
 		panic(err)
@@ -273,7 +271,7 @@ func (c *Context) MustExecute(name string, args ...string) {
 // MustExecuteSilent ensures a system command to be executed without outputting
 // stdout, otherwise panics
 func (c *Context) MustExecuteSilent(name string, args ...string) {
-	err := c.Execute(true, false, name, args...)
+	err := c.ExecuteSilent(name, args...)
 	if err != nil {
 		panic(err)
 	}
@@ -282,13 +280,14 @@ func (c *Context) MustExecuteSilent(name string, args ...string) {
 // MustExecuteFullySilent ensures a system command to be executed without
 // outputting stdout and stderr, otherwise panics
 func (c *Context) MustExecuteFullySilent(name string, args ...string) {
-	err := c.Execute(true, true, name, args...)
+	err := c.ExecuteFullySilent(name, args...)
 	if err != nil {
 		panic(err)
 	}
 }
 
 // Execute exceutes a system command with configurable stdout and stderr output
+// https://github.com/golang/go/issues/9307
 func (c *Context) Execute(stdoutSilent bool, stderrSilent bool, name string, args ...string) error {
 	cmd := exec.Command(name, args...)
 
@@ -296,14 +295,18 @@ func (c *Context) Execute(stdoutSilent bool, stderrSilent bool, name string, arg
 
 	// handling Stdout and Stderr
 	// idea from http://nathanleclaire.com/blog/2014/12/29/shelled-out-commands-in-golang/
+	var wg sync.WaitGroup
+	wg.Add(2)
+
 	cmdOutReader, err := cmd.StdoutPipe()
 	if err != nil {
 		panic(err)
 	}
 
 	outScanner := bufio.NewScanner(cmdOutReader)
-	c.stdoutBuffer = *new(bytes.Buffer)
+	c.stdoutBuffer = new(bytes.Buffer)
 	go func() {
+		defer wg.Done()
 		outputHandler(outScanner, !stdoutSilent, c.stdoutBuffer)
 	}()
 
@@ -313,40 +316,48 @@ func (c *Context) Execute(stdoutSilent bool, stderrSilent bool, name string, arg
 	}
 
 	errScanner := bufio.NewScanner(cmdErrReader)
-	c.stderrBuffer = *new(bytes.Buffer)
+	c.stderrBuffer = new(bytes.Buffer)
 	go func() {
+		defer wg.Done()
 		outputHandler(errScanner, !stderrSilent, c.stderrBuffer)
 	}()
 	cmd.Start()
-	err = cmd.Wait()
 
-	// flush buffers
-	outputHandler(outScanner, !stdoutSilent, c.stdoutBuffer)
-	outputHandler(errScanner, !stderrSilent, c.stderrBuffer)
+	err = cmd.Wait()
+	// make sure all output is captured and processed before continuing
+	wg.Wait()
+
 	c.lastProcessState = cmd.ProcessState
 	return err
 }
 
 // internal
-func outputHandler(scanner *bufio.Scanner, output bool, buffer bytes.Buffer) {
+func outputHandler(scanner *bufio.Scanner, output bool, buffer *bytes.Buffer) {
 	for scanner.Scan() {
-		if output {
-			fmt.Println(scanner.Text())
+		text := scanner.Text()
+		if buffer.Len() > 0 {
+			buffer.WriteString("\n")
 		}
-		buffer.WriteString(scanner.Text() + "\n")
+		_, err := buffer.WriteString(text)
+		if err != nil {
+			panic(err)
+		}
+		if output {
+			fmt.Println(text, buffer.String())
+		}
 	}
 }
 
 // LastOutput returns the output buffer of the last command executed using one
 // of the Execute* functions. stdout is captured for any command run.
-func (c *Context) LastOutput() *bytes.Buffer {
-	return &c.stdoutBuffer
+func (c *Context) LastOutput() string {
+	return c.stdoutBuffer.String()
 }
 
 // LastError returns the error buffer of the last command executed using one
 // of the Execute* functions. stderr is captured for any command run.
-func (c *Context) LastError() *bytes.Buffer {
-	return &c.stderrBuffer
+func (c *Context) LastError() string {
+	return c.stderrBuffer.String()
 }
 
 // LastSuccessful determins if the last command run was successful. Success is

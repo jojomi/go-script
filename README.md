@@ -29,7 +29,7 @@ import (
 )
 
 func main() {
-	sc := script.NewScriptContext()
+	sc := script.NewContext()
 	sc.MustCommandExist("date")
 	sc.SetWorkingDir("/tmp")
 	sc.MustExecuteSilent("date", "-R")

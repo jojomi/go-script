@@ -146,12 +146,24 @@ func TestSuccessful(t *testing.T) {
 
 func TestResolveSymlinks(t *testing.T) {
 	sc := script.NewContext()
+
+	// create symlink for testing
+	wd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	err = os.Symlink(path.Join(wd, "test/dir/dir.txt"), "test/dir/subdir/symlink.txt")
+	if err != nil {
+		panic(err)
+	}
+	defer os.Remove("test/dir/subdir/symlink.txt")
+
 	tempDir := sc.MustGetTempDir()
 	defer os.RemoveAll(tempDir)
 	sc.SetWorkingDir(tempDir)
 	from, _ := filepath.Abs("test/dir")
 	to := path.Join(tempDir, "dir")
-	err := sc.CopyDir(from, to)
+	err = sc.CopyDir(from, to)
 	if err != nil {
 		panic(err)
 	}

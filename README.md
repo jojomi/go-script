@@ -13,8 +13,6 @@ This library is intended as a wrapper for typical tasks shell scripts include an
 
 [![GoDoc](https://godoc.org/github.com/jojomi/go-script?status.svg)](https://godoc.org/github.com/jojomi/go-script)
 
-Up-to-date list of methods (in source): [script.go](script.go)
-
 The methods include helpers for executing external commands, maintaining a working directory, handling files and directories (cp/mv), and evaluating command output (exit code, stdout/stderr).
 
 
@@ -46,9 +44,22 @@ Thus you should be prepared for future API changes of any kind. In doubt, fork
 away to keep a certain API status.
 
 
+## Useful Libraries
+
+Some libraries have proven highly useful in conjunction with go-script:
+
+* [color](https://github.com/fatih/color)
+* [termtables](https://github.com/apcera/termtables)
+* [uiprogress](https://github.com/gosuri/uiprogress)
+
+More inspiration can be found at [awesome-go](https://github.com/avelino/awesome-go#command-line).
+
+
 ## Development
 
 Comments, issues, and of course pull requests are highly welcome.
+
+If you create a Merge Request, be sure to execute `go test ./...` beforehand.
 
 
 ## License

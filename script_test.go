@@ -43,6 +43,10 @@ func TestExists(t *testing.T) {
 	assert.Equal(t, true, sc.DirExists(testDirectory), fmt.Sprintf("Expected directory '%s' to exist, but it did not", testDirectory))
 	sc.MustDirExist(testDirectory)
 
+	sc.EnsurePathForFile("test/bin/archive.zip", 0750)
+	sc.EnsurePathForFile("test/create/this/path/archive.zip", 0750)
+	defer os.RemoveAll("test/create")
+
 	defer func() { recover() }()
 	sc.MustFileExist(testFilename + "-non-existing")
 	sc.MustDirExist(testDirectory + "-non-existing")
@@ -78,9 +82,7 @@ func TestExecute(t *testing.T) {
 func TestStateString(t *testing.T) {
 	sc := script.NewContext()
 	sc.ExecuteFullySilent("test/bin/output.sh")
-	/*if actual := sc.WorkingDir(); actual != tempDir {
-		t.Errorf("Expected WorkingDir: %s, Actual: %s", tempDir, actual)
-	}*/
+	// TODO verify
 }
 
 func TestWorkingDir(t *testing.T) {

@@ -26,6 +26,26 @@ func (c *Context) MustFileExist(filename string) {
 	}
 }
 
+// EnsureDirExists ensures a directory with the given name exists.
+// This function panics if it is unable to find or create a directory as requested.
+// TODO also check if permissions are less than requested and update if possible
+func (c *Context) EnsureDirExists(dirname string, perm os.FileMode) {
+	if !c.DirExists(dirname) {
+		err := os.MkdirAll(dirname, perm)
+		if err != nil {
+			panic(fmt.Errorf("Could not create directory at %s.", dirname))
+		}
+	}
+}
+
+// EnsurePathForFile guarantees the path for a given filename to exist.
+// If the directory is not yet existing, it will be created using the permission
+// mask given.
+// TODO also check if permissions are less than requested and update if possible
+func (c *Context) EnsurePathForFile(filename string, perm os.FileMode) {
+	c.EnsureDirExists(filepath.Dir(filename), perm)
+}
+
 // DirExists checks if a given filename exists (being a directory).
 func (c *Context) DirExists(path string) bool {
 	path = c.AbsPath(path)

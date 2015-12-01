@@ -11,7 +11,7 @@ This library is intended as a wrapper for typical tasks shell scripts include an
 
 ## Methods
 
-[![GoDoc](https://godoc.org/github.com/jojomi/go-script?status.svg)](https://godoc.org/github.com/jojomi/go-script)
+[![GoDoc](https://godoc.org/github.com/jojomi/go-script?status.svg)](https://godoc.org/github.com/jojomi/go-script) ![Coverage](http://gocover.io/_badge/github.com/jojomi/go-script)
 
 The methods include helpers for executing external commands, maintaining a working directory, handling files and directories (cp/mv), and evaluating command output (exit code, stdout/stderr).
 

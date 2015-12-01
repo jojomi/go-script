@@ -59,7 +59,7 @@ More inspiration can be found at [awesome-go](https://github.com/avelino/awesome
 
 Comments, issues, and of course pull requests are highly welcome.
 
-If you create a Merge Request, be sure to execute `go test ./...` beforehand.
+If you create a Merge Request, be sure to execute `./precommit.sh` beforehand.
 
 
 ## License

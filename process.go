@@ -35,8 +35,7 @@ func (c *Context) MustCommandExist(name string) {
 	}
 }
 
-// ExecuteNormal execute a system command, stdout and stderr are output just
-// normally
+// ExecuteDebug executes a system command, stdout and stderr are piped
 func (c *Context) ExecuteDebug(name string, args ...string) (err error) {
 	err = c.Execute(false, false, name, args...)
 	return
@@ -57,7 +56,7 @@ func (c *Context) ExecuteFullySilent(name string, args ...string) (err error) {
 	return
 }
 
-// MustExecute ensures a system command to be executed, otherwise panics
+// MustExecuteDebug ensures a system command to be executed, otherwise panics
 func (c *Context) MustExecuteDebug(name string, args ...string) {
 	err := c.Execute(false, false, name, args...)
 	if err != nil {

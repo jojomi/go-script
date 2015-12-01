@@ -10,6 +10,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCommandExists(t *testing.T) {
@@ -21,10 +23,10 @@ func TestCommandExists(t *testing.T) {
 	badBinary := "not-any-binary-named-like-this"
 
 	if !sc.CommandExists(goodBinary) {
-		t.Errorf("Expected command '%s' to exists, but it did not", goodBinary)
+		t.Errorf("Expected command '%s' to exist, but it did not", goodBinary)
 	}
 	if sc.CommandExists(badBinary) {
-		t.Errorf("Expected command '%s' not to exists, but it did", badBinary)
+		t.Errorf("Expected command '%s' not to exist, but it did", badBinary)
 	}
 
 	sc.MustCommandExist(goodBinary)
@@ -66,7 +68,7 @@ func TestExecute(t *testing.T) {
 		sc.MustExecuteFullySilent,
 	}
 	for _, function := range mustExecuteFunctions {
-		function("test/output.sh")
+		function("test/bin/output.sh")
 
 		expected := "output\nalright"
 		if actual := sc.LastOutput(); actual != expected {
@@ -78,7 +80,7 @@ func TestExecute(t *testing.T) {
 		}
 	}
 	for _, function := range executeFunctions {
-		function("test/output.sh")
+		function("test/bin/output.sh")
 		if !sc.LastSuccessful() {
 			t.Errorf("Command execution unsuccessful")
 		}
@@ -98,7 +100,7 @@ func TestExecute(t *testing.T) {
 
 func TestPrintLastState(t *testing.T) {
 	sc := script.NewContext()
-	sc.ExecuteFullySilent("test/output.sh")
+	sc.ExecuteFullySilent("test/bin/output.sh")
 	sc.PrintLastState()
 }
 
@@ -171,6 +173,17 @@ func TestWorkingDir(t *testing.T) {
 	if !sc.FileExists(to) {
 		t.Errorf("File not existing after MoveDir: %s", to)
 	}
+}
+
+func TestLastSuccessful(t *testing.T) {
+	sc := script.NewContext()
+
+	sc.ExecuteFullySilent("test/bin/success.sh")
+	sc.LastExitCode()
+	assert.Equal(t, true, true, "Command execution should be successful")
+
+	sc.ExecuteFullySilent("test/bin/fail.sh")
+	assert.Equal(t, false, false, "Command execution should be unsuccessful")
 }
 
 func TestResolveSymlinks(t *testing.T) {

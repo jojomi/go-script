@@ -1,7 +1,7 @@
 package script_test
 
 import (
-	_ "fmt"
+	"fmt"
 	"github.com/jojomi/go-script"
 	"io/ioutil"
 	"os"
@@ -22,12 +22,8 @@ func TestCommandExists(t *testing.T) {
 	}
 	badBinary := "not-any-binary-named-like-this"
 
-	if !sc.CommandExists(goodBinary) {
-		t.Errorf("Expected command '%s' to exist, but it did not", goodBinary)
-	}
-	if sc.CommandExists(badBinary) {
-		t.Errorf("Expected command '%s' not to exist, but it did", badBinary)
-	}
+	assert.Equal(t, true, sc.CommandExists(goodBinary), fmt.Sprintf("Expected command '%s' to exist, but it did not", goodBinary))
+	assert.Equal(t, false, sc.CommandExists(badBinary), fmt.Sprintf("Expected command '%s' not to exist, but it did", badBinary))
 
 	sc.MustCommandExist(goodBinary)
 
@@ -40,14 +36,11 @@ func TestExists(t *testing.T) {
 	testDirectory := "test/dir"
 
 	sc := script.NewContext()
-	if !sc.FileExists(testFilename) {
-		t.Errorf("Expected file '%s' to exist, but it did not", testFilename)
-	}
+
+	assert.Equal(t, true, sc.FileExists(testFilename), fmt.Sprintf("Expected file '%s' to exist, but it did not", testFilename))
 	sc.MustFileExist(testFilename)
 
-	if !sc.DirExists(testDirectory) {
-		t.Errorf("Expected directory '%s' to exist, but it did not", testDirectory)
-	}
+	assert.Equal(t, true, sc.DirExists(testDirectory), fmt.Sprintf("Expected directory '%s' to exist, but it did not", testDirectory))
 	sc.MustDirExist(testDirectory)
 
 	defer func() { recover() }()
@@ -57,51 +50,37 @@ func TestExists(t *testing.T) {
 
 func TestExecute(t *testing.T) {
 	sc := script.NewContext()
-	executeFunctions := []func(string, ...string) error{
+	executeFunctions := []func(string, ...string) (*script.ProcessResult, error){
 		sc.ExecuteDebug,
 		sc.ExecuteSilent,
 		sc.ExecuteFullySilent,
 	}
-	mustExecuteFunctions := []func(string, ...string){
+	mustExecuteFunctions := []func(string, ...string) *script.ProcessResult{
 		sc.MustExecuteDebug,
 		sc.MustExecuteSilent,
 		sc.MustExecuteFullySilent,
 	}
 	for _, function := range mustExecuteFunctions {
-		function("test/bin/output.sh")
-
-		expected := "output\nalright"
-		if actual := sc.LastOutput(); actual != expected {
-			t.Errorf("Expected Output: %s, Actual: %s", expected, actual)
-		}
-		expected = "error\nwrong"
-		if actual := sc.LastError(); actual != expected {
-			t.Errorf("Expected Error: %s, Actual: %s", expected, actual)
-		}
+		pr := function("test/bin/output.sh")
+		assert.Equal(t, "output\nalright", pr.Output(), "Unexpected output")
+		assert.Equal(t, "error\nwrong", pr.Error(), "Unexpected error output")
 	}
 	for _, function := range executeFunctions {
-		function("test/bin/output.sh")
-		if !sc.LastSuccessful() {
-			t.Errorf("Command execution unsuccessful")
-		}
-		if sc.LastProcessState().Pid() == 0 {
-			t.Errorf("Command PID incorrect")
-		}
-		expected := "output\nalright"
-		if actual := sc.LastOutput(); actual != expected {
-			t.Errorf("Expected Output: %s, Actual: %s", expected, actual)
-		}
-		expected = "error\nwrong"
-		if actual := sc.LastError(); actual != expected {
-			t.Errorf("Expected Error: %s, Actual: %s", expected, actual)
-		}
+		pr, err := function("test/bin/output.sh")
+		assert.Equal(t, nil, err, "Command execution returned error")
+		assert.Equal(t, true, pr.Successful(), "Command execution unsuccessful")
+		assert.NotEqual(t, 0, pr.ProcessState.Pid(), "Command PID incorrect")
+		assert.Equal(t, "output\nalright", pr.Output(), "Unexpected output")
+		assert.Equal(t, "error\nwrong", pr.Error(), "Unexpected error output")
 	}
 }
 
-func TestPrintLastState(t *testing.T) {
+func TestStateString(t *testing.T) {
 	sc := script.NewContext()
 	sc.ExecuteFullySilent("test/bin/output.sh")
-	sc.PrintLastState()
+	/*if actual := sc.WorkingDir(); actual != tempDir {
+		t.Errorf("Expected WorkingDir: %s, Actual: %s", tempDir, actual)
+	}*/
 }
 
 func TestWorkingDir(t *testing.T) {
@@ -109,81 +88,60 @@ func TestWorkingDir(t *testing.T) {
 	tempDir := sc.MustGetTempDir()
 	defer os.RemoveAll(tempDir)
 	sc.SetWorkingDir(tempDir)
-	if actual := sc.WorkingDir(); actual != tempDir {
-		t.Errorf("Expected WorkingDir: %s, Actual: %s", tempDir, actual)
-	}
+	assert.Equal(t, tempDir, sc.WorkingDir(), "Unexpected working dir")
 
 	// copy and move a dir
 	from, _ := filepath.Abs("test/dir")
 	to := path.Join(tempDir, "dir")
 	err := sc.CopyDir(from, to)
-	if err != nil {
-		t.Errorf("Error on CopyDir: %q", err)
-	}
+	assert.Equal(t, nil, err, "Error on CopyDir")
 	checkPaths := []string{
 		path.Join(tempDir, "dir", "dir.txt"),
 		path.Join(tempDir, "dir", "subdir", "subdir-file"),
 	}
 	for _, checkFile := range checkPaths {
-		if !sc.FileExists(checkFile) {
-			t.Errorf("File not existing after CopyDir: %s", checkFile)
-		}
+		assert.Equal(t, true, sc.FileExists(checkFile), fmt.Sprintf("File not existing after CopyDir: %s", checkFile))
 	}
 
 	from = to
 	to = path.Join(tempDir, "dir-moved")
 	err = sc.MoveDir(from, to)
-	if err != nil {
-		t.Errorf("Error on MoveDir: %q", err)
-	}
+	assert.Equal(t, nil, err)
 	checkPaths = []string{
 		path.Join(tempDir, "dir-moved", "dir.txt"),
 		path.Join(tempDir, "dir-moved", "subdir", "subdir-file"),
 	}
 	for _, checkFile := range checkPaths {
-		if !sc.FileExists(checkFile) {
-			t.Errorf("File not existing after MoveDir: %s", checkFile)
-		}
+		assert.Equal(t, true, sc.FileExists(checkFile), fmt.Sprintf("File not existing after MoveDir: %s", checkFile))
 	}
 
 	// copy and move a file
 	from, _ = filepath.Abs("test/file.sample")
 	to = path.Join(tempDir, "output.txt")
 	err = sc.CopyFile(from, to)
-	if err != nil {
-		t.Errorf("Error on CopyFile: %q", err)
-	}
+	assert.Equal(t, nil, err)
 	checkPaths = []string{from, to}
 	for _, checkFile := range checkPaths {
-		if !sc.FileExists(checkFile) {
-			t.Errorf("File not existing after CopyFile: %s", checkFile)
-		}
+		assert.Equal(t, true, sc.FileExists(checkFile), fmt.Sprintf("File not existing after CopyFile: %s", checkFile))
 	}
 
 	from = to
 	to = sc.MustGetTempFile().Name()
 	defer os.Remove(to)
 	err = sc.MoveFile(from, to)
-	if err != nil {
-		t.Errorf("Error on MoveFile: %q", err)
-	}
-	if sc.FileExists(from) {
-		t.Errorf("File existing after MoveFile: %s", from)
-	}
-	if !sc.FileExists(to) {
-		t.Errorf("File not existing after MoveDir: %s", to)
-	}
+	assert.Equal(t, nil, err)
+	assert.Equal(t, false, sc.FileExists(from), fmt.Sprintf("File existing after MoveFile: %s", from))
+	assert.Equal(t, true, sc.FileExists(to), fmt.Sprintf("File not existing after MoveDir: %s", to))
 }
 
-func TestLastSuccessful(t *testing.T) {
+func TestSuccessful(t *testing.T) {
 	sc := script.NewContext()
 
-	sc.ExecuteFullySilent("test/bin/success.sh")
-	sc.LastExitCode()
-	assert.Equal(t, true, true, "Command execution should be successful")
+	prSuccess, _ := sc.ExecuteFullySilent("test/bin/success.sh")
+	assert.Equal(t, true, prSuccess.Successful(), "Command execution should be successful")
 
-	sc.ExecuteFullySilent("test/bin/fail.sh")
-	assert.Equal(t, false, false, "Command execution should be unsuccessful")
+	prFail, _ := sc.ExecuteFullySilent("test/bin/fail.sh")
+	assert.Equal(t, false, prFail.Successful(), "Command execution should be unsuccessful")
 }
 
 func TestResolveSymlinks(t *testing.T) {
@@ -204,20 +162,11 @@ func TestResolveSymlinks(t *testing.T) {
 
 	// test
 	content, err := ioutil.ReadFile(symlinkSourcePath)
-	if err != nil {
-		panic(err)
-	}
-	actual := string(content)
-	expected := "test"
-	if actual != expected {
-		t.Errorf("Resolving symlinks did not work. File content expected: '%s', actual '%s'", expected, actual)
-	}
+	assert.Equal(t, nil, err)
+
+	assert.Equal(t, "test", string(content), "Resolving symlinks did not work.")
 	content, err = ioutil.ReadFile(path.Join(to, "subdir", "symlink.txt"))
-	actual = strings.TrimSpace(string(content))
-	expected = "dir.txt content"
-	if actual != expected {
-		t.Errorf("Resolving symlinks did not work. File content expected: '%s', actual '%s'", expected, actual)
-	}
+	assert.Equal(t, "dir.txt content", strings.TrimSpace(string(content)), "Resolving symlinks did not work.")
 }
 
 func createFile(filename, content string) {

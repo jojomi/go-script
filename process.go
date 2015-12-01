@@ -13,6 +13,52 @@ import (
 	"syscall"
 )
 
+// ProcessResult contains the results of a process execution be it successful or not.
+type ProcessResult struct {
+	Cmd          *exec.Cmd
+	ProcessState *os.ProcessState
+	ProcessError error
+	stdoutBuffer *bytes.Buffer
+	stderrBuffer *bytes.Buffer
+}
+
+// Output returns a string representation of the output of the process denoted
+// by this struct.
+func (pr *ProcessResult) Output() string {
+	return pr.stdoutBuffer.String()
+}
+
+// Error returns a string representation of the stderr output of the process denoted
+// by this struct.
+func (pr *ProcessResult) Error() string {
+	return pr.stderrBuffer.String()
+}
+
+// Successful returns true iff the process denoted by this struct was run
+// successfully. Success is defined as the exit code being set to 0.
+func (pr *ProcessResult) Successful() bool {
+	fmt.Println(pr.ExitCode())
+	return pr.ExitCode() == 0
+}
+
+// StateString returns a string representation of the process denoted by
+// this struct
+func (pr *ProcessResult) StateString() string {
+	state := pr.ProcessState
+	return fmt.Sprintf("PID: %q, Exited: %t, Exit Code: %q, Success: %t, User Time: %q", state.Pid(), state.Exited(), pr.ExitCode(), state.Success(), state.UserTime())
+}
+
+// ExitCode returns the exit code of the command denoted by this struct
+func (pr *ProcessResult) ExitCode() int {
+	var waitStatus syscall.WaitStatus
+	if exitError, ok := pr.ProcessError.(*exec.ExitError); ok {
+		waitStatus = exitError.Sys().(syscall.WaitStatus)
+	} else {
+		waitStatus = pr.ProcessState.Sys().(syscall.WaitStatus)
+	}
+	return waitStatus.ExitStatus()
+}
+
 // CommandPath finds the full path of a binary given its name.
 func (c *Context) CommandPath(name string) string {
 	cmd := exec.Command("which", name)
@@ -31,60 +77,65 @@ func (c *Context) CommandExists(name string) bool {
 // MustCommandExist ensures a given binary exists in PATH, otherwise panics.
 func (c *Context) MustCommandExist(name string) {
 	if !c.CommandExists(name) {
-		panic(fmt.Errorf("Command %s is not available. Please make sure it is installed and accessible. Ouptut of which: %s", name, c.LastOutput()))
+		panic(fmt.Errorf("Command %s is not available. Please make sure it is installed and accessible.", name))
 	}
 }
 
 // ExecuteDebug executes a system command, stdout and stderr are piped
-func (c *Context) ExecuteDebug(name string, args ...string) (err error) {
-	err = c.Execute(false, false, name, args...)
+func (c *Context) ExecuteDebug(name string, args ...string) (pr *ProcessResult, err error) {
+	pr, err = c.Execute(false, false, name, args...)
 	return
 }
 
 // ExecuteSilent executes a  system command without outputting stdout (it is
 // still captured and can be retrieved using LastOutput())
-func (c *Context) ExecuteSilent(name string, args ...string) (err error) {
-	err = c.Execute(true, false, name, args...)
+func (c *Context) ExecuteSilent(name string, args ...string) (pr *ProcessResult, err error) {
+	pr, err = c.Execute(true, false, name, args...)
 	return
 }
 
 // ExecuteFullySilent executes a system command without outputting stdout or
 // stderr (both are still captured and can be retrieved using LastOutput() and
 // LastError())
-func (c *Context) ExecuteFullySilent(name string, args ...string) (err error) {
-	err = c.Execute(true, true, name, args...)
+func (c *Context) ExecuteFullySilent(name string, args ...string) (pr *ProcessResult, err error) {
+	pr, err = c.Execute(true, true, name, args...)
 	return
 }
 
 // MustExecuteDebug ensures a system command to be executed, otherwise panics
-func (c *Context) MustExecuteDebug(name string, args ...string) {
-	err := c.Execute(false, false, name, args...)
+func (c *Context) MustExecuteDebug(name string, args ...string) (pr *ProcessResult) {
+	pr, err := c.Execute(false, false, name, args...)
 	if err != nil {
 		panic(err)
 	}
+	return
 }
 
 // MustExecuteSilent ensures a system command to be executed without outputting
 // stdout, otherwise panics
-func (c *Context) MustExecuteSilent(name string, args ...string) {
-	err := c.ExecuteSilent(name, args...)
+func (c *Context) MustExecuteSilent(name string, args ...string) (pr *ProcessResult) {
+	pr, err := c.ExecuteSilent(name, args...)
 	if err != nil {
 		panic(err)
 	}
+	return
 }
 
 // MustExecuteFullySilent ensures a system command to be executed without
 // outputting stdout and stderr, otherwise panics
-func (c *Context) MustExecuteFullySilent(name string, args ...string) {
-	err := c.ExecuteFullySilent(name, args...)
+func (c *Context) MustExecuteFullySilent(name string, args ...string) (pr *ProcessResult) {
+	pr, err := c.ExecuteFullySilent(name, args...)
 	if err != nil {
 		panic(err)
 	}
+	return
 }
 
 // Execute exceutes a system command with configurable stdout and stderr output
 // https://github.com/golang/go/issues/9307
-func (c *Context) Execute(stdoutSilent bool, stderrSilent bool, name string, args ...string) error {
+func (c *Context) Execute(stdoutSilent bool, stderrSilent bool, name string, args ...string) (pr *ProcessResult, err error) {
+	pr = &ProcessResult{}
+
 	cmd := exec.Command(name, args...)
 
 	cmd.Dir = c.workingDir
@@ -92,7 +143,6 @@ func (c *Context) Execute(stdoutSilent bool, stderrSilent bool, name string, arg
 	// handling Stdout and Stderr
 	// idea from http://nathanleclaire.com/blog/2014/12/29/shelled-out-commands-in-golang/
 	var wg sync.WaitGroup
-	wg.Add(2)
 
 	cmdOutReader, err := cmd.StdoutPipe()
 	if err != nil {
@@ -100,10 +150,11 @@ func (c *Context) Execute(stdoutSilent bool, stderrSilent bool, name string, arg
 	}
 
 	outScanner := bufio.NewScanner(cmdOutReader)
-	c.stdoutBuffer = new(bytes.Buffer)
+	pr.stdoutBuffer = new(bytes.Buffer)
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		outputHandler(outScanner, !stdoutSilent, c.stdoutBuffer)
+		outputHandler(outScanner, !stdoutSilent, pr.stdoutBuffer)
 	}()
 
 	cmdErrReader, err := cmd.StderrPipe()
@@ -112,19 +163,26 @@ func (c *Context) Execute(stdoutSilent bool, stderrSilent bool, name string, arg
 	}
 
 	errScanner := bufio.NewScanner(cmdErrReader)
-	c.stderrBuffer = new(bytes.Buffer)
+	pr.stderrBuffer = new(bytes.Buffer)
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		outputHandler(errScanner, !stderrSilent, c.stderrBuffer)
+		outputHandler(errScanner, !stderrSilent, pr.stderrBuffer)
 	}()
-	cmd.Start()
+	err = cmd.Start()
+	if err != nil {
+		return nil, err
+	}
 
 	err = cmd.Wait()
 	// make sure all output is captured and processed before continuing
 	wg.Wait()
 
-	c.lastProcessState = cmd.ProcessState
-	return err
+	pr.Cmd = cmd
+	pr.ProcessState = cmd.ProcessState
+	pr.ProcessError = err
+
+	return pr, err
 }
 
 // internal
@@ -142,51 +200,4 @@ func outputHandler(scanner *bufio.Scanner, output bool, buffer *bytes.Buffer) {
 			fmt.Println(text, buffer.String())
 		}
 	}
-}
-
-// LastOutput returns the output buffer of the last command executed using one
-// of the Execute* functions. stdout is captured for any command run.
-func (c *Context) LastOutput() string {
-	return c.stdoutBuffer.String()
-}
-
-// LastError returns the error buffer of the last command executed using one
-// of the Execute* functions. stderr is captured for any command run.
-func (c *Context) LastError() string {
-	return c.stderrBuffer.String()
-}
-
-// LastSuccessful determins if the last command run was successful. Success is
-// defined as the process' return code being zero.
-func (c *Context) LastSuccessful() bool {
-	return c.LastExitCode() == 0
-}
-
-// LastExitCode returns the exit code of the last command run.
-func (c *Context) LastExitCode() int {
-	var waitStatus syscall.WaitStatus
-	if exitError, ok := c.lastProcessError.(*exec.ExitError); ok {
-		waitStatus = exitError.Sys().(syscall.WaitStatus)
-	} else {
-		waitStatus = c.lastProcessState.Sys().(syscall.WaitStatus)
-	}
-	fmt.Println(waitStatus)
-	return waitStatus.ExitStatus()
-}
-
-// LastProcessState returns the *os.ProcessState of the last command run.
-func (c *Context) LastProcessState() *os.ProcessState {
-	return c.lastProcessState
-}
-
-// PrintLastState conveniently prints statistics on the last command run. Useful
-// for debugging purposes.
-func (c *Context) PrintLastState() {
-	state := c.lastProcessState
-	fmt.Println(
-		"PID:", state.Pid(),
-		"Exited:", state.Exited(),
-		"Exit Code:", c.LastExitCode(),
-		"Success:", state.Success(),
-		"User Time:", state.UserTime())
 }

@@ -32,9 +32,9 @@ func main() {
 	sc := script.NewContext()
 	sc.MustCommandExist("date")
 	sc.SetWorkingDir("/tmp")
-	sc.MustExecuteSilent("date", "-R")
-	fmt.Print("The current date: ", sc.LastOutput().String())
-	sc.PrintLastState()
+	pr := sc.MustExecuteSilent("date", "-R")
+	fmt.Print("The current date: ", pr.Output())
+	fmt.Println(pr.StateString())
 }
 ```
 

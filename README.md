@@ -51,6 +51,7 @@ Some libraries have proven highly useful in conjunction with go-script:
 * [color](https://github.com/fatih/color)
 * [termtables](https://github.com/apcera/termtables)
 * [uiprogress](https://github.com/gosuri/uiprogress)
+* [pipe](https://github.com/go-pipe/pipe)
 
 More inspiration can be found at [awesome-go](https://github.com/avelino/awesome-go#command-line).
 

@@ -1,87 +1,66 @@
-// Package script is a library facilitating the creation of programs that resemble
-// bash scripts.
 package script
 
 import (
-	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
-	"github.com/termie/go-shutil"
+	"github.com/spf13/afero"
 )
 
 // FileExists checks if a given filename exists (being a file).
 func (c *Context) FileExists(filename string) bool {
 	filename = c.AbsPath(filename)
-	fi, err := os.Stat(filename)
+	fi, err := c.fs.Stat(filename)
 	return !os.IsNotExist(err) && !fi.IsDir()
-}
-
-// MustFileExist ensures if a given filename exists (being a file), panics otherwise.
-func (c *Context) MustFileExist(filename string) {
-	if !c.FileExists(filename) {
-		panic(fmt.Errorf("File %s does not exist.", filename))
-	}
 }
 
 // EnsureDirExists ensures a directory with the given name exists.
 // This function panics if it is unable to find or create a directory as requested.
 // TODO also check if permissions are less than requested and update if possible
-func (c *Context) EnsureDirExists(dirname string, perm os.FileMode) {
-	if !c.DirExists(dirname) {
-		err := os.MkdirAll(dirname, perm)
+func (c *Context) EnsureDirExists(dirname string, perm os.FileMode) error {
+	fullPath := c.AbsPath(dirname)
+	if !c.DirExists(fullPath) {
+		err := c.fs.MkdirAll(fullPath, perm)
 		if err != nil {
-			panic(fmt.Errorf("Could not create directory at %s.", dirname))
+			return err
 		}
 	}
+	return nil
 }
 
 // EnsurePathForFile guarantees the path for a given filename to exist.
 // If the directory is not yet existing, it will be created using the permission
 // mask given.
 // TODO also check if permissions are less than requested and update if possible
-func (c *Context) EnsurePathForFile(filename string, perm os.FileMode) {
-	c.EnsureDirExists(filepath.Dir(filename), perm)
+func (c *Context) EnsurePathForFile(filename string, perm os.FileMode) error {
+	return c.EnsureDirExists(filepath.Dir(filename), perm)
 }
 
 // DirExists checks if a given filename exists (being a directory).
 func (c *Context) DirExists(path string) bool {
 	path = c.AbsPath(path)
-	fi, err := os.Stat(path)
+	fi, err := c.fs.Stat(path)
 	return !os.IsNotExist(err) && fi.IsDir()
 }
 
-// MustDirExist checks if a given filename exists (being a directory).
-func (c *Context) MustDirExist(path string) {
-	if !c.DirExists(path) {
-		panic(fmt.Errorf("Directory %s does not exist.", path))
-	}
+// TempFile returns a temporary file and an error if one occurred
+func (c *Context) TempFile() (afero.File, error) {
+	return afero.TempFile(c.fs, "", "")
 }
 
-// MustGetTempFile guarantees to return a temporary file, panics otherwise
-func (c *Context) MustGetTempFile() (tempFile *os.File) {
-	tempFile, err := ioutil.TempFile("", "")
-	if err != nil {
-		panic(err)
-	}
-	return
-}
-
-// MustGetTempDir guarantees to return a temporary directory, panics otherwise
-func (c *Context) MustGetTempDir() (tempDir string) {
-	tempDir, err := ioutil.TempDir("", "")
-	if err != nil {
-		panic(err)
-	}
-	return
+// TempDir guarantees to return a temporary directory, panics otherwise
+func (c *Context) TempDir() (string, error) {
+	return afero.TempDir(c.fs, "", "")
 }
 
 // AbsPath returns the absolute path of the path given. If the input path
-// is absolute, it is returned untouched. Otherwise the absolute path is
-// built relative to the current working directory of the Context.
+// is absolute, it is returned untouched except for removing trailing path separators.
+// Otherwise the absolute path is built relative to the current working directory of the Context.
+// This function always returns a path *without* path separator at the end. See AbsPathSep for one that adds it.
 func (c *Context) AbsPath(filename string) string {
+	filename = c.WithoutTrailingPathSep(filename)
 	absPath, err := filepath.Abs(filename)
 	if err != nil {
 		return filename
@@ -97,23 +76,46 @@ func (c *Context) AbsPath(filename string) string {
 	return filename
 }
 
+// AbsPathSep is a variant of AbsPath that always adds a trailing path separator
+func (c *Context) AbsPathSep(filename string) string {
+	return c.WithTrailingPathSep(c.AbsPath(filename))
+}
+
+// WithoutTrailingPathSep trims trailing path seps from a string
+func (c *Context) WithoutTrailingPathSep(input string) string {
+	return strings.TrimRight(input, string(os.PathSeparator))
+}
+
+// WithTrailingPathSep trims trailing path seps from a string
+func (c *Context) WithTrailingPathSep(input string) string {
+	if strings.HasSuffix(input, string(os.PathSeparator)) {
+		return input
+	}
+	return input + string(os.PathSeparator)
+}
+
 // ResolveSymlinks resolve symlinks in a directory. All symlinked files are
 // replaced with copies of the files they point to. Only one level symlinks
 // are currently supported.
 func (c *Context) ResolveSymlinks(dir string) error {
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+	var (
+		err            error
+		linkTargetPath string
+		targetInfo     os.FileInfo
+	)
+	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		// symlink?
 		if info.Mode()&os.ModeSymlink == os.ModeSymlink {
 			// resolve
-			linkTargetPath, err := filepath.EvalSymlinks(path)
+			linkTargetPath, err = filepath.EvalSymlinks(path)
 			if err != nil {
 				panic(err)
 			}
-			targetInfo, err := os.Stat(linkTargetPath)
+			targetInfo, err = c.fs.Stat(linkTargetPath)
 			if err != nil {
 				panic(err)
 			}
-			os.Remove(path)
+			c.fs.Remove(path)
 			// directory?
 			if targetInfo.IsDir() {
 				c.CopyDir(linkTargetPath, path)
@@ -135,11 +137,11 @@ func (c *Context) MoveFile(from, to string) error {
 	to = c.AbsPath(to)
 
 	// work around "invalid cross-device link" for os.Rename
-	err := shutil.CopyFile(from, to, true)
+	err := CopyFile(c.fs, from, to, true)
 	if err != nil {
 		return err
 	}
-	err = os.Remove(from)
+	err = c.fs.Remove(from)
 	if err != nil {
 		return err
 	}
@@ -153,17 +155,15 @@ func (c *Context) MoveDir(from, to string) error {
 	to = c.AbsPath(to)
 
 	// work around "invalid cross-device link" for os.Rename
-	options := &shutil.CopyTreeOptions{
-		Symlinks:               true,
-		Ignore:                 nil,
-		CopyFunction:           shutil.Copy,
-		IgnoreDanglingSymlinks: false,
+	options := &CopyTreeOptions{
+		Ignore:       nil,
+		CopyFunction: Copy,
 	}
-	err := shutil.CopyTree(from, to, options)
+	err := CopyTree(c.fs, from, to, options)
 	if err != nil {
 		return err
 	}
-	err = os.RemoveAll(from)
+	err = c.fs.RemoveAll(from)
 	if err != nil {
 		return err
 	}
@@ -173,18 +173,16 @@ func (c *Context) MoveDir(from, to string) error {
 // CopyFile copies a file. Cross-device copying is supported, so files
 // can be copied from and to tmpfs mounts.
 func (c *Context) CopyFile(from, to string) error {
-	return shutil.CopyFile(from, to, true) // don't follow symlinks
+	return CopyFile(c.fs, from, to, true) // don't follow symlinks
 }
 
 // CopyDir copies a directory. Cross-device copying is supported, so directories
 // can be copied from and to tmpfs mounts.
 func (c *Context) CopyDir(src, dst string) error {
-	options := &shutil.CopyTreeOptions{
-		Symlinks:               true,
-		Ignore:                 nil,
-		CopyFunction:           shutil.Copy,
-		IgnoreDanglingSymlinks: false,
+	options := &CopyTreeOptions{
+		Ignore:       nil,
+		CopyFunction: Copy,
 	}
-	err := shutil.CopyTree(src, dst, options)
+	err := CopyTree(c.fs, src, dst, options)
 	return err
 }

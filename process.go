@@ -6,11 +6,13 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
-	"sync"
 	"syscall"
+
+	"github.com/tomclegg/nbtee"
 )
 
 // ProcessResult contains the results of a process execution be it successful or not.
@@ -131,7 +133,7 @@ func (c *Context) MustExecuteFullySilent(name string, args ...string) (pr *Proce
 	return
 }
 
-// Execute exceutes a system command with configurable stdout and stderr output
+// Execute executes a system command with configurable stdout and stderr output
 // https://github.com/golang/go/issues/9307
 func (c *Context) Execute(stdoutSilent bool, stderrSilent bool, name string, args ...string) (pr *ProcessResult, err error) {
 	pr = &ProcessResult{}
@@ -139,44 +141,34 @@ func (c *Context) Execute(stdoutSilent bool, stderrSilent bool, name string, arg
 	cmd := exec.Command(name, args...)
 
 	cmd.Dir = c.workingDir
+	cmd.Env = c.getFullEnv()
 
 	// handling Stdout and Stderr
 	// idea from http://nathanleclaire.com/blog/2014/12/29/shelled-out-commands-in-golang/
-	var wg sync.WaitGroup
+	//var wg sync.WaitGroup
 
-	cmdOutReader, err := cmd.StdoutPipe()
-	if err != nil {
-		panic(err)
-	}
+	//multiStdoutWriter := io.MultiWriter(os.Stdout, pr.stdoutBuffer)
+	multiStdoutWriter := nbtee.NewWriter(8).Start()
+	multiStdoutWriter.Add(os.Stdout)
+	multiStdoutWriter.Add(pr.stdoutBuffer)
+	multiStderrWriter := io.MultiWriter(os.Stderr, pr.stderrBuffer)
 
-	outScanner := bufio.NewScanner(cmdOutReader)
-	pr.stdoutBuffer = new(bytes.Buffer)
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		outputHandler(outScanner, !stdoutSilent, pr.stdoutBuffer)
-	}()
+	cmd.Stdout = multiStdoutWriter
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = multiStderrWriter
+	cmd.Stderr = os.Stderr
 
-	cmdErrReader, err := cmd.StderrPipe()
-	if err != nil {
-		panic(err)
-	}
-
-	errScanner := bufio.NewScanner(cmdErrReader)
-	pr.stderrBuffer = new(bytes.Buffer)
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		outputHandler(errScanner, !stderrSilent, pr.stderrBuffer)
-	}()
+	fmt.Println("starting")
 	err = cmd.Start()
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("running")
 
 	err = cmd.Wait()
+	fmt.Println("finished")
 	// make sure all output is captured and processed before continuing
-	wg.Wait()
+	//wg.Wait()
 
 	pr.Cmd = cmd
 	pr.ProcessState = cmd.ProcessState

@@ -1,9 +1,9 @@
-// Package script is a library facilitating the creation of programs that resemble
-// bash scripts.
 package script
 
 import (
 	"os"
+
+	"github.com/spf13/afero"
 )
 
 // Context for script operations. A Context includes the working directory and provides
@@ -11,13 +11,16 @@ import (
 // Using different Contexts it is possible to handle multiple separate environments.
 type Context struct {
 	workingDir string
-	env        []string
+	env        map[string]string
+	fs         afero.Fs
 }
 
 // NewContext returns a pointer to a new Context.
 func NewContext() (context *Context) {
 	// initialize Context
 	context = &Context{}
+	context.env = make(map[string]string, 0)
+	context.fs = afero.NewOsFs()
 
 	cwd, err := os.Getwd()
 	if err == nil {
@@ -26,12 +29,17 @@ func NewContext() (context *Context) {
 	return
 }
 
-// SetWorkingDir changes the current working dir.
+// SetWorkingDir changes the current working dir
 func (c *Context) SetWorkingDir(workingDir string) {
 	c.workingDir = workingDir
 }
 
-// WorkingDir retrieves the current working dir.
+// WorkingDir retrieves the current working dir
 func (c *Context) WorkingDir() string {
 	return c.workingDir
+}
+
+// IsUserRoot checks if a user is root priviledged (Linux only? Mac? Windows?)
+func (c *Context) IsUserRoot() bool {
+	return os.Geteuid() == 0
 }

@@ -3,7 +3,6 @@
 package script
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
 	"io"
@@ -142,6 +141,23 @@ func (c *Context) MustExecuteFullySilent(name string, args ...string) (pr *Proce
 // Execute executes a system command with configurable stdout and stderr output
 // https://github.com/golang/go/issues/9307
 func (c *Context) Execute(stdoutSilent bool, stderrSilent bool, name string, args ...string) (pr *ProcessResult, err error) {
+	cmd := c.prepareCommand(stdoutSilent, stderrSilent, name, args...)
+
+	err = cmd.Start()
+	if err != nil {
+		return nil, err
+	}
+
+	err = cmd.Wait()
+
+	pr.Cmd = cmd
+	pr.ProcessState = cmd.ProcessState
+	pr.ProcessError = err
+
+	return pr, err
+}
+
+func (c Context) prepareCommand(stdoutSilent bool, stderrSilent bool, name string, args ...string) *exec.Cmd {
 	pr = NewProcessResult()
 
 	cmd := exec.Command(name, args...)
@@ -159,36 +175,5 @@ func (c *Context) Execute(stdoutSilent bool, stderrSilent bool, name string, arg
 	} else {
 		cmd.Stdout = io.MultiWriter(os.Stdout, pr.stdoutBuffer)
 	}
-
-	err = cmd.Start()
-	if err != nil {
-		return nil, err
-	}
-
-	err = cmd.Wait()
-	// make sure all output is captured and processed before continuing
-	//wg.Wait()
-
-	pr.Cmd = cmd
-	pr.ProcessState = cmd.ProcessState
-	pr.ProcessError = err
-
-	return pr, err
-}
-
-// internal
-func outputHandler(scanner *bufio.Scanner, output bool, buffer *bytes.Buffer) {
-	for scanner.Scan() {
-		text := scanner.Text()
-		if buffer.Len() > 0 {
-			buffer.WriteString("\n")
-		}
-		_, err := buffer.WriteString(text)
-		if err != nil {
-			panic(err)
-		}
-		if output {
-			fmt.Println(text, buffer.String())
-		}
-	}
+	return cmd
 }

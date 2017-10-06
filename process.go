@@ -139,9 +139,8 @@ func (c *Context) MustExecuteFullySilent(name string, args ...string) (pr *Proce
 }
 
 // Execute executes a system command with configurable stdout and stderr output
-// https://github.com/golang/go/issues/9307
 func (c *Context) Execute(stdoutSilent bool, stderrSilent bool, name string, args ...string) (pr *ProcessResult, err error) {
-	cmd := c.prepareCommand(stdoutSilent, stderrSilent, name, args...)
+	cmd, pr := c.prepareCommand(stdoutSilent, stderrSilent, name, args...)
 
 	err = cmd.Start()
 	if err != nil {
@@ -150,17 +149,27 @@ func (c *Context) Execute(stdoutSilent bool, stderrSilent bool, name string, arg
 
 	err = cmd.Wait()
 
-	pr.Cmd = cmd
-	pr.ProcessState = cmd.ProcessState
 	pr.ProcessError = err
 
 	return pr, err
 }
 
-func (c Context) prepareCommand(stdoutSilent bool, stderrSilent bool, name string, args ...string) *exec.Cmd {
-	pr = NewProcessResult()
+// ExecuteDetached executes the given command in this context in the background (detached). This means the script execution instantly continues.
+func (c *Context) ExecuteDetached(name string, args ...string) (cmd *exec.Cmd, pr *ProcessResult, err error) {
+	cmd, pr = c.prepareCommand(true, true, name, args...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setpgid: true,
+	}
+	err = cmd.Start()
+	return
+}
+
+func (c Context) prepareCommand(stdoutSilent bool, stderrSilent bool, name string, args ...string) (*exec.Cmd, *ProcessResult) {
+	pr := NewProcessResult()
 
 	cmd := exec.Command(name, args...)
+	pr.Cmd = cmd
+	pr.ProcessState = cmd.ProcessState
 
 	cmd.Dir = c.workingDir
 	cmd.Env = c.getFullEnv()
@@ -175,5 +184,5 @@ func (c Context) prepareCommand(stdoutSilent bool, stderrSilent bool, name strin
 	} else {
 		cmd.Stdout = io.MultiWriter(os.Stdout, pr.stdoutBuffer)
 	}
-	return cmd
+	return cmd, pr
 }

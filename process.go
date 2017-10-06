@@ -11,8 +11,6 @@ import (
 	"os/exec"
 	"strings"
 	"syscall"
-
-	"github.com/tomclegg/nbtee"
 )
 
 // ProcessResult contains the results of a process execution be it successful or not.
@@ -22,6 +20,14 @@ type ProcessResult struct {
 	ProcessError error
 	stdoutBuffer *bytes.Buffer
 	stderrBuffer *bytes.Buffer
+}
+
+// NewProcessResult creates a new empty ProcessResult
+func NewProcessResult() *ProcessResult {
+	p := &ProcessResult{}
+	p.stdoutBuffer = bytes.NewBuffer(make([]byte, 0, 100))
+	p.stderrBuffer = bytes.NewBuffer(make([]byte, 0, 100))
+	return p
 }
 
 // Output returns a string representation of the output of the process denoted
@@ -136,37 +142,30 @@ func (c *Context) MustExecuteFullySilent(name string, args ...string) (pr *Proce
 // Execute executes a system command with configurable stdout and stderr output
 // https://github.com/golang/go/issues/9307
 func (c *Context) Execute(stdoutSilent bool, stderrSilent bool, name string, args ...string) (pr *ProcessResult, err error) {
-	pr = &ProcessResult{}
+	pr = NewProcessResult()
 
 	cmd := exec.Command(name, args...)
 
 	cmd.Dir = c.workingDir
 	cmd.Env = c.getFullEnv()
 
-	// handling Stdout and Stderr
-	// idea from http://nathanleclaire.com/blog/2014/12/29/shelled-out-commands-in-golang/
-	//var wg sync.WaitGroup
+	if stderrSilent {
+		cmd.Stderr = pr.stderrBuffer
+	} else {
+		cmd.Stderr = io.MultiWriter(os.Stderr, pr.stderrBuffer)
+	}
+	if stderrSilent {
+		cmd.Stdout = pr.stdoutBuffer
+	} else {
+		cmd.Stdout = io.MultiWriter(os.Stdout, pr.stdoutBuffer)
+	}
 
-	//multiStdoutWriter := io.MultiWriter(os.Stdout, pr.stdoutBuffer)
-	multiStdoutWriter := nbtee.NewWriter(8).Start()
-	multiStdoutWriter.Add(os.Stdout)
-	multiStdoutWriter.Add(pr.stdoutBuffer)
-	multiStderrWriter := io.MultiWriter(os.Stderr, pr.stderrBuffer)
-
-	cmd.Stdout = multiStdoutWriter
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = multiStderrWriter
-	cmd.Stderr = os.Stderr
-
-	fmt.Println("starting")
 	err = cmd.Start()
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("running")
 
 	err = cmd.Wait()
-	fmt.Println("finished")
 	// make sure all output is captured and processed before continuing
 	//wg.Wait()
 

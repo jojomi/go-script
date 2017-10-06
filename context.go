@@ -43,7 +43,7 @@ func (c *Context) WorkingDir() string {
 	return c.workingDir
 }
 
-// IsUserRoot checks if a user is root priviledged (Linux only? Mac? Windows?)
+// IsUserRoot checks if a user is root priviledged (Linux and Mac only? Windows?)
 func (c *Context) IsUserRoot() bool {
 	return os.Geteuid() == 0
 }

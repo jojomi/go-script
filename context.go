@@ -13,6 +13,8 @@ type Context struct {
 	workingDir string
 	env        map[string]string
 	fs         afero.Fs
+	stdout     *os.File
+	stderr     *os.File
 }
 
 // NewContext returns a pointer to a new Context.
@@ -21,6 +23,8 @@ func NewContext() (context *Context) {
 	context = &Context{}
 	context.env = make(map[string]string, 0)
 	context.fs = afero.NewOsFs()
+	context.stdout = os.Stdout
+	context.stderr = os.Stderr
 
 	cwd, err := os.Getwd()
 	if err == nil {

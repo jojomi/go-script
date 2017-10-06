@@ -143,14 +143,12 @@ func (c *Context) Execute(stdoutSilent bool, stderrSilent bool, name string, arg
 
 	err = cmd.Start()
 	if err != nil {
-		return nil, err
+		return
 	}
-
 	err = cmd.Wait()
-
 	pr.ProcessError = err
 
-	return pr, err
+	return
 }
 
 // ExecuteDetached executes the given command in this context in the background (detached). This means the script execution instantly continues.

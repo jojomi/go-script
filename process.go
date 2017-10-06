@@ -66,7 +66,7 @@ func (pr *ProcessResult) ExitCode() int {
 	return waitStatus.ExitStatus()
 }
 
-// CommandPath finds the full path of a binary given its name.
+// CommandPath finds the full path of a binary given its name. This requires the wich command to be present in the system.
 func (c *Context) CommandPath(name string) string {
 	cmd := exec.Command("which", name)
 	cmdOutput, err := cmd.Output()
@@ -95,15 +95,14 @@ func (c *Context) ExecuteDebug(name string, args ...string) (pr *ProcessResult, 
 }
 
 // ExecuteSilent executes a  system command without outputting stdout (it is
-// still captured and can be retrieved using LastOutput())
+// still captured and can be retrieved using the returned ProcessResult)
 func (c *Context) ExecuteSilent(name string, args ...string) (pr *ProcessResult, err error) {
 	pr, err = c.Execute(true, false, name, args...)
 	return
 }
 
 // ExecuteFullySilent executes a system command without outputting stdout or
-// stderr (both are still captured and can be retrieved using LastOutput() and
-// LastError())
+// stderr (both are still captured and can be retrieved using the returned ProcessResult)
 func (c *Context) ExecuteFullySilent(name string, args ...string) (pr *ProcessResult, err error) {
 	pr, err = c.Execute(true, true, name, args...)
 	return

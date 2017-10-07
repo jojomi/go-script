@@ -1,6 +1,7 @@
 package script
 
 import (
+	"io"
 	"os"
 
 	"github.com/spf13/afero"
@@ -13,8 +14,8 @@ type Context struct {
 	workingDir string
 	env        map[string]string
 	fs         afero.Fs
-	stdout     *os.File
-	stderr     *os.File
+	stdout     io.Writer
+	stderr     io.Writer
 }
 
 // NewContext returns a pointer to a new Context.

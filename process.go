@@ -174,15 +174,15 @@ func (c Context) prepareCommand(stdoutSilent bool, stderrSilent bool, name strin
 	cmd.Dir = c.workingDir
 	cmd.Env = c.getFullEnv()
 
+	if stdoutSilent {
+		cmd.Stdout = pr.stdoutBuffer
+	} else {
+		cmd.Stdout = io.MultiWriter(c.stdout, pr.stdoutBuffer)
+	}
 	if stderrSilent {
 		cmd.Stderr = pr.stderrBuffer
 	} else {
 		cmd.Stderr = io.MultiWriter(c.stderr, pr.stderrBuffer)
-	}
-	if stderrSilent {
-		cmd.Stdout = pr.stdoutBuffer
-	} else {
-		cmd.Stdout = io.MultiWriter(c.stdout, pr.stdoutBuffer)
 	}
 	return cmd, pr
 }

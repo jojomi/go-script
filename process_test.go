@@ -51,6 +51,18 @@ func TestProcessStdoutStderr(t *testing.T) {
 	assert.Equal(t, "\"abc\"\n", errBuffer.String())
 }
 
+func TestProcessCommandExists(t *testing.T) {
+	sc := NewContext()
+	sc.CommandExists("ls")
+}
+
+func TestProcessSuccessful(t *testing.T) {
+	sc := NewContext()
+	pr, err := sc.ExecuteFullySilent("ls")
+	assert.Nil(t, err)
+	assert.Equal(t, true, pr.Successful())
+}
+
 func setOutputBuffers(sc *Context) (out, err *bytes.Buffer) {
 	stdoutBuffer := bytes.NewBuffer(make([]byte, 0, 100))
 	sc.stdout = stdoutBuffer

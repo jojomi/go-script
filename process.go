@@ -15,6 +15,7 @@ import (
 // ProcessResult contains the results of a process execution be it successful or not.
 type ProcessResult struct {
 	Cmd          *exec.Cmd
+	Process      *os.Process
 	ProcessState *os.ProcessState
 	ProcessError error
 	stdoutBuffer *bytes.Buffer
@@ -145,7 +146,9 @@ func (c *Context) Execute(stdoutSilent bool, stderrSilent bool, name string, arg
 	if err != nil {
 		return
 	}
+	pr.Process = cmd.Process
 	err = cmd.Wait()
+	pr.ProcessState = cmd.ProcessState
 	pr.ProcessError = err
 
 	return
@@ -158,6 +161,7 @@ func (c *Context) ExecuteDetached(name string, args ...string) (cmd *exec.Cmd, p
 		Setpgid: true,
 	}
 	err = cmd.Start()
+	pr.Process = cmd.Process
 	return
 }
 
@@ -166,7 +170,6 @@ func (c Context) prepareCommand(stdoutSilent bool, stderrSilent bool, name strin
 
 	cmd := exec.Command(name, args...)
 	pr.Cmd = cmd
-	pr.ProcessState = cmd.ProcessState
 
 	cmd.Dir = c.workingDir
 	cmd.Env = c.getFullEnv()

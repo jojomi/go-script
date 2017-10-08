@@ -122,6 +122,7 @@ func (c *Context) ExecuteDebug(name string, args ...string) (pr *ProcessResult, 
 	pr, err = c.Execute(CommandConfig{
 		OutputStdout: true,
 		OutputStderr: true,
+		ConnectStdin: true,
 	}, name, args...)
 	return
 }
@@ -132,6 +133,7 @@ func (c *Context) ExecuteSilent(name string, args ...string) (pr *ProcessResult,
 	pr, err = c.Execute(CommandConfig{
 		OutputStdout: false,
 		OutputStderr: true,
+		ConnectStdin: true,
 	}, name, args...)
 	return
 }
@@ -142,6 +144,7 @@ func (c *Context) ExecuteFullySilent(name string, args ...string) (pr *ProcessRe
 	pr, err = c.Execute(CommandConfig{
 		OutputStdout: false,
 		OutputStderr: false,
+		ConnectStdin: true,
 	}, name, args...)
 	return
 }
@@ -151,6 +154,7 @@ func (c *Context) MustExecuteDebug(name string, args ...string) (pr *ProcessResu
 	pr, err := c.Execute(CommandConfig{
 		OutputStdout: true,
 		OutputStderr: true,
+		ConnectStdin: true,
 	}, name, args...)
 	if err != nil {
 		panic(err)
@@ -164,6 +168,7 @@ func (c *Context) MustExecuteSilent(name string, args ...string) (pr *ProcessRes
 	pr, err := c.Execute(CommandConfig{
 		OutputStdout: false,
 		OutputStderr: true,
+		ConnectStdin: true,
 	}, name, args...)
 	if err != nil {
 		panic(err)
@@ -177,6 +182,7 @@ func (c *Context) MustExecuteFullySilent(name string, args ...string) (pr *Proce
 	pr, err := c.Execute(CommandConfig{
 		OutputStdout: false,
 		OutputStderr: false,
+		ConnectStdin: true,
 	}, name, args...)
 	if err != nil {
 		panic(err)
@@ -260,6 +266,10 @@ func (c Context) prepareCommand(cc CommandConfig, name string, args ...string) (
 		cmd.Stderr = pr.stderrBuffer
 	} else {
 		cmd.Stderr = io.MultiWriter(c.stderr, pr.stderrBuffer)
+	}
+
+	if cc.ConnectStdin {
+		cmd.Stdin = c.stdin
 	}
 	return cmd, pr
 }

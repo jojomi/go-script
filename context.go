@@ -16,6 +16,7 @@ type Context struct {
 	fs         afero.Fs
 	stdout     io.Writer
 	stderr     io.Writer
+	stdin      io.Reader
 }
 
 // NewContext returns a pointer to a new Context.
@@ -26,6 +27,7 @@ func NewContext() (context *Context) {
 	context.fs = afero.NewOsFs()
 	context.stdout = os.Stdout
 	context.stderr = os.Stderr
+	context.stdin = os.Stdin
 
 	cwd, err := os.Getwd()
 	if err == nil {

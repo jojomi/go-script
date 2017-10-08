@@ -41,6 +41,14 @@ func main() {
 			os.Stderr.Write([]byte(value + "\n"))
 			continue
 		}
+		if strings.HasPrefix(input, "echo: ") {
+			stdinScanner := bufio.NewScanner(os.Stdin)
+			stdinScanner.Scan()
+			value = stdinScanner.Text() + "\n"
+			os.Stdout.Write([]byte(value))
+			os.Stderr.Write([]byte(value))
+			continue
+		}
 		if strings.HasPrefix(input, "exit: ") {
 			value = input[len("exit: "):]
 			intValue, err = strconv.Atoi(value)

@@ -2,6 +2,7 @@ package script
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -59,6 +60,17 @@ func TestProcessStdoutStderr(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, basicOutputStdout, outBuffer.String())
 	assert.Equal(t, basicOutputStderr, errBuffer.String())
+}
+
+func TestProcessStdin(t *testing.T) {
+	input := "my input"
+	sc := processContext()
+
+	sc.stdin = strings.NewReader(input)
+	pr, err := sc.ExecuteFullySilent("./bin", "echo")
+	assert.Nil(t, err)
+	assert.Equal(t, input+"\n", pr.Output())
+	assert.Equal(t, input+"\n", pr.Error())
 }
 
 /* COMMAND EXECUTION */

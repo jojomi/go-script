@@ -75,6 +75,22 @@ func TestAbsPathSep(t *testing.T) {
 	assert.Equal(t, "/abc/dir/", sc.AbsPathSep("/abc/dir/"))
 }
 
+func TestWithTrailingPathSep(t *testing.T) {
+	sc := NewContext()
+	assert.Equal(t, "dir/", sc.WithTrailingPathSep("dir"))
+	assert.Equal(t, "dir/", sc.WithTrailingPathSep("dir/"))
+	assert.Equal(t, "/abc/dir/", sc.WithTrailingPathSep("/abc/dir"))
+	assert.Equal(t, "/abc/dir/", sc.WithTrailingPathSep("/abc/dir/"))
+}
+
+func TestWithoutTrailingPathSep(t *testing.T) {
+	sc := NewContext()
+	assert.Equal(t, "dir", sc.WithoutTrailingPathSep("dir"))
+	assert.Equal(t, "dir", sc.WithoutTrailingPathSep("dir/"))
+	assert.Equal(t, "/abc/dir", sc.WithoutTrailingPathSep("/abc/dir"))
+	assert.Equal(t, "/abc/dir", sc.WithoutTrailingPathSep("/abc/dir/"))
+}
+
 func TestEnsureDirExists(t *testing.T) {
 	path := "/start"
 	dir := "abcde"
@@ -86,6 +102,8 @@ func TestEnsureDirExists(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, sc.DirExists(fullPath))
 }
+
+// TODO func TestEnsureDirExistsFailure(t *testing.T) {}
 
 func TestEnsurePathForFile(t *testing.T) {
 	path := "/root/"

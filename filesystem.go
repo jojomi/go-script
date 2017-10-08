@@ -81,12 +81,12 @@ func (c *Context) AbsPathSep(filename string) string {
 	return c.WithTrailingPathSep(c.AbsPath(filename))
 }
 
-// WithoutTrailingPathSep trims trailing path seps from a string
+// WithoutTrailingPathSep trims trailing os.PathSeparator from a string
 func (c *Context) WithoutTrailingPathSep(input string) string {
 	return strings.TrimRight(input, string(os.PathSeparator))
 }
 
-// WithTrailingPathSep trims trailing path seps from a string
+// WithTrailingPathSep adds a trailing os.PathSeparator to a string if it is missing
 func (c *Context) WithTrailingPathSep(input string) string {
 	if strings.HasSuffix(input, string(os.PathSeparator)) {
 		return input

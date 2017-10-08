@@ -36,6 +36,10 @@ func main() {
 }
 ```
 
+More example can be found in the `examples` directory, execute them like this:
+
+`go run examples/command-checking.go`
+
 
 ## Warning
 

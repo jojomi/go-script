@@ -12,6 +12,9 @@ var (
 	commandNotInPath = "binary-not-in-path"
 
 	nonExistingBinary = "./not-existing"
+
+	basicOutputStdout = "hello this is me\nwhatever\n"
+	basicOutputStderr = "\"abc\"\n"
 )
 
 /* OUTPUT HANDLING */
@@ -22,18 +25,18 @@ func TestProcessOutputErrorCatching(t *testing.T) {
 
 	pr, err := sc.ExecuteFullySilent("./bin", "basic-output")
 	assert.Nil(t, err)
-	assert.Equal(t, "hello this is me\nwhatever\n", pr.Output())
-	assert.Equal(t, "\"abc\"\n", pr.Error())
+	assert.Equal(t, basicOutputStdout, pr.Output())
+	assert.Equal(t, basicOutputStderr, pr.Error())
 
 	pr, err = sc.ExecuteDebug("./bin", "basic-output")
 	assert.Nil(t, err)
-	assert.Equal(t, "hello this is me\nwhatever\n", pr.Output())
-	assert.Equal(t, "\"abc\"\n", pr.Error())
+	assert.Equal(t, basicOutputStdout, pr.Output())
+	assert.Equal(t, basicOutputStderr, pr.Error())
 
 	pr, err = sc.ExecuteSilent("./bin", "basic-output")
 	assert.Nil(t, err)
-	assert.Equal(t, "hello this is me\nwhatever\n", pr.Output())
-	assert.Equal(t, "\"abc\"\n", pr.Error())
+	assert.Equal(t, basicOutputStdout, pr.Output())
+	assert.Equal(t, basicOutputStderr, pr.Error())
 }
 
 func TestProcessStdoutStderr(t *testing.T) {
@@ -49,13 +52,13 @@ func TestProcessStdoutStderr(t *testing.T) {
 	_, err = sc.ExecuteSilent("./bin", "basic-output")
 	assert.Nil(t, err)
 	assert.Equal(t, "", outBuffer.String())
-	assert.Equal(t, "\"abc\"\n", errBuffer.String())
+	assert.Equal(t, basicOutputStderr, errBuffer.String())
 
 	outBuffer, errBuffer = setOutputBuffers(sc)
 	_, err = sc.ExecuteDebug("./bin", "basic-output")
 	assert.Nil(t, err)
-	assert.Equal(t, "hello this is me\nwhatever\n", outBuffer.String())
-	assert.Equal(t, "\"abc\"\n", errBuffer.String())
+	assert.Equal(t, basicOutputStdout, outBuffer.String())
+	assert.Equal(t, basicOutputStderr, errBuffer.String())
 }
 
 /* COMMAND EXECUTION */

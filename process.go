@@ -4,10 +4,12 @@ package script
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"syscall"
 )
@@ -45,25 +47,44 @@ func (pr *ProcessResult) Error() string {
 // Successful returns true iff the process denoted by this struct was run
 // successfully. Success is defined as the exit code being set to 0.
 func (pr *ProcessResult) Successful() bool {
-	return pr.ExitCode() == 0
+	code, err := pr.ExitCode()
+	if err != nil {
+		return false
+	}
+	return code == 0
 }
 
 // StateString returns a string representation of the process denoted by
 // this struct
 func (pr *ProcessResult) StateString() string {
 	state := pr.ProcessState
-	return fmt.Sprintf("PID: %d, Exited: %t, Exit Code: %d, Success: %t, User Time: %s", state.Pid(), state.Exited(), pr.ExitCode(), state.Success(), state.UserTime())
+	exitCode, err := pr.ExitCode()
+	exitCodeString := "?"
+	if err == nil {
+		exitCodeString = strconv.Itoa(exitCode)
+	}
+	return fmt.Sprintf("PID: %d, Exited: %t, Exit Code: %s, Success: %t, User Time: %s", state.Pid(), state.Exited(), exitCodeString, state.Success(), state.UserTime())
 }
 
 // ExitCode returns the exit code of the command denoted by this struct
-func (pr *ProcessResult) ExitCode() int {
-	var waitStatus syscall.WaitStatus
-	if exitError, ok := pr.ProcessError.(*exec.ExitError); ok {
+func (pr *ProcessResult) ExitCode() (int, error) {
+	var (
+		waitStatus syscall.WaitStatus
+		exitError  *exec.ExitError
+	)
+	ok := false
+	if pr.ProcessError != nil {
+		exitError, ok = pr.ProcessError.(*exec.ExitError)
+	}
+	if ok {
 		waitStatus = exitError.Sys().(syscall.WaitStatus)
 	} else {
+		if pr.ProcessState == nil {
+			return -1, errors.New("no exit code available")
+		}
 		waitStatus = pr.ProcessState.Sys().(syscall.WaitStatus)
 	}
-	return waitStatus.ExitStatus()
+	return waitStatus.ExitStatus(), nil
 }
 
 // CommandPath finds the full path of a binary given its name. This requires the wich command to be present in the system.
@@ -146,21 +167,42 @@ func (c *Context) Execute(stdoutSilent bool, stderrSilent bool, name string, arg
 		return
 	}
 	pr.Process = cmd.Process
-	err = cmd.Wait()
-	pr.ProcessState = cmd.ProcessState
-	pr.ProcessError = err
+	c.WaitCmd(cmd, pr)
 
 	return
 }
 
 // ExecuteDetached executes the given command in this context in the background (detached). This means the script execution instantly continues.
-func (c *Context) ExecuteDetached(name string, args ...string) (cmd *exec.Cmd, pr *ProcessResult, err error) {
-	cmd, pr = c.prepareCommand(true, true, name, args...)
+func (c *Context) ExecuteDetached(stdoutSilent bool, stderrSilent bool, name string, args ...string) (cmd *exec.Cmd, pr *ProcessResult, err error) {
+	cmd, pr = c.prepareCommand(stdoutSilent, stderrSilent, name, args...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setpgid: true,
 	}
 	err = cmd.Start()
 	pr.Process = cmd.Process
+	return
+}
+
+// ExecuteDebug executes a system command, stdout and stderr are piped.
+// The command is executed in the background (detached).
+func (c *Context) ExecuteDetachedDebug(name string, args ...string) (cmd *exec.Cmd, pr *ProcessResult, err error) {
+	cmd, pr, err = c.ExecuteDetached(false, false, name, args...)
+	return
+}
+
+// ExecuteSilent executes a  system command without outputting stdout (it is
+// still captured and can be retrieved using the returned ProcessResult).
+// The command is executed in the background (detached).
+func (c *Context) ExecuteDetachedSilent(name string, args ...string) (cmd *exec.Cmd, pr *ProcessResult, err error) {
+	cmd, pr, err = c.ExecuteDetached(true, false, name, args...)
+	return
+}
+
+// ExecuteDetachedFullySilent executes a system command without outputting stdout or
+// stderr (both are still captured and can be retrieved using the returned ProcessResult).
+// The command is executed in the background (detached).
+func (c *Context) ExecuteDetachedFullySilent(name string, args ...string) (cmd *exec.Cmd, pr *ProcessResult, err error) {
+	cmd, pr, err = c.ExecuteDetached(true, true, name, args...)
 	return
 }
 
@@ -184,4 +226,10 @@ func (c Context) prepareCommand(stdoutSilent bool, stderrSilent bool, name strin
 		cmd.Stderr = io.MultiWriter(c.stderr, pr.stderrBuffer)
 	}
 	return cmd, pr
+}
+
+func (c Context) WaitCmd(cmd *exec.Cmd, pr *ProcessResult) {
+	err := cmd.Wait()
+	pr.ProcessState = cmd.ProcessState
+	pr.ProcessError = err
 }

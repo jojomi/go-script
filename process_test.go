@@ -109,6 +109,56 @@ func TestProcessMustExecuteFullySilent(t *testing.T) {
 	})
 }
 
+/* DETACHED COMMANDS */
+
+func TestProcessExecuteDetachedDebug(t *testing.T) {
+	sc := processContext()
+	stdout, stderr := setOutputBuffers(sc)
+	cmd, pr, err := sc.ExecuteDetachedDebug("./bin", "sleep")
+	assert.Nil(t, err)
+	assert.NotNil(t, pr)
+	assert.IsType(t, int(0), pr.Process.Pid, "Not seen a PID on a detached process. Did it even start?") // int
+
+	_, exitErr := pr.ExitCode()
+	assert.NotNil(t, exitErr)
+	assert.False(t, pr.Successful())
+
+	sc.ExecuteDebug("./bin", "basic-output")
+
+	sc.WaitCmd(cmd, pr)
+	assert.True(t, pr.Successful())
+	assert.Equal(t, "before\n"+basicOutputStdout+"after\n", stdout.String())
+	assert.Equal(t, "error-before\n"+basicOutputStderr+"error-after\n", stderr.String())
+}
+
+func TestProcessExecuteDetachedSilent(t *testing.T) {
+	sc := processContext()
+	stdout, stderr := setOutputBuffers(sc)
+	cmd, pr, err := sc.ExecuteDetachedSilent("./bin", "sleep")
+	assert.Nil(t, err)
+	assert.NotNil(t, pr)
+
+	sc.ExecuteDebug("./bin", "basic-output")
+
+	sc.WaitCmd(cmd, pr)
+	assert.Equal(t, basicOutputStdout, stdout.String())
+	assert.Equal(t, "error-before\n"+basicOutputStderr+"error-after\n", stderr.String())
+}
+
+func TestProcessExecuteDetachedFullySilent(t *testing.T) {
+	sc := processContext()
+	stdout, stderr := setOutputBuffers(sc)
+	cmd, pr, err := sc.ExecuteDetachedFullySilent("./bin", "sleep")
+	assert.Nil(t, err)
+	assert.NotNil(t, pr)
+
+	sc.ExecuteDebug("./bin", "basic-output")
+
+	sc.WaitCmd(cmd, pr)
+	assert.Equal(t, basicOutputStdout, stdout.String())
+	assert.Equal(t, basicOutputStderr, stderr.String())
+}
+
 /* COMMAND HANDLING */
 
 func TestProcessCommandExists(t *testing.T) {
@@ -147,8 +197,10 @@ func TestProcessSuccessful(t *testing.T) {
 func TestProcessExitCode(t *testing.T) {
 	sc := processContext()
 	pr, err := sc.ExecuteFullySilent("./bin", "exit-code-error")
-	assert.NotNil(t, err)
-	assert.Equal(t, 28, pr.ExitCode())
+	assert.Nil(t, err)
+	exitCode, exitErr := pr.ExitCode()
+	assert.Nil(t, exitErr)
+	assert.Equal(t, 28, exitCode)
 }
 
 /* HELPER FUNCTIONS */

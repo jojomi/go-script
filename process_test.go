@@ -114,7 +114,7 @@ func TestProcessMustExecuteFullySilent(t *testing.T) {
 func TestProcessExecuteDetachedDebug(t *testing.T) {
 	sc := processContext()
 	stdout, stderr := setOutputBuffers(sc)
-	cmd, pr, err := sc.ExecuteDetachedDebug("./bin", "sleep")
+	pr, err := sc.ExecuteDetachedDebug("./bin", "sleep")
 	assert.Nil(t, err)
 	assert.NotNil(t, pr)
 	assert.IsType(t, int(0), pr.Process.Pid, "Not seen a PID on a detached process. Did it even start?") // int
@@ -125,7 +125,7 @@ func TestProcessExecuteDetachedDebug(t *testing.T) {
 
 	sc.ExecuteDebug("./bin", "basic-output")
 
-	sc.WaitCmd(cmd, pr)
+	sc.WaitCmd(pr)
 	assert.True(t, pr.Successful())
 	assert.Equal(t, "before\n"+basicOutputStdout+"after\n", stdout.String())
 	assert.Equal(t, "error-before\n"+basicOutputStderr+"error-after\n", stderr.String())
@@ -134,13 +134,13 @@ func TestProcessExecuteDetachedDebug(t *testing.T) {
 func TestProcessExecuteDetachedSilent(t *testing.T) {
 	sc := processContext()
 	stdout, stderr := setOutputBuffers(sc)
-	cmd, pr, err := sc.ExecuteDetachedSilent("./bin", "sleep")
+	pr, err := sc.ExecuteDetachedSilent("./bin", "sleep")
 	assert.Nil(t, err)
 	assert.NotNil(t, pr)
 
 	sc.ExecuteDebug("./bin", "basic-output")
 
-	sc.WaitCmd(cmd, pr)
+	sc.WaitCmd(pr)
 	assert.Equal(t, basicOutputStdout, stdout.String())
 	assert.Equal(t, "error-before\n"+basicOutputStderr+"error-after\n", stderr.String())
 }
@@ -148,13 +148,13 @@ func TestProcessExecuteDetachedSilent(t *testing.T) {
 func TestProcessExecuteDetachedFullySilent(t *testing.T) {
 	sc := processContext()
 	stdout, stderr := setOutputBuffers(sc)
-	cmd, pr, err := sc.ExecuteDetachedFullySilent("./bin", "sleep")
+	pr, err := sc.ExecuteDetachedFullySilent("./bin", "sleep")
 	assert.Nil(t, err)
 	assert.NotNil(t, pr)
 
 	sc.ExecuteDebug("./bin", "basic-output")
 
-	sc.WaitCmd(cmd, pr)
+	sc.WaitCmd(pr)
 	assert.Equal(t, basicOutputStdout, stdout.String())
 	assert.Equal(t, basicOutputStderr, stderr.String())
 }

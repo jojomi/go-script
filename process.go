@@ -45,7 +45,6 @@ func (pr *ProcessResult) Error() string {
 // Successful returns true iff the process denoted by this struct was run
 // successfully. Success is defined as the exit code being set to 0.
 func (pr *ProcessResult) Successful() bool {
-	fmt.Println(pr.ExitCode())
 	return pr.ExitCode() == 0
 }
 
@@ -53,7 +52,7 @@ func (pr *ProcessResult) Successful() bool {
 // this struct
 func (pr *ProcessResult) StateString() string {
 	state := pr.ProcessState
-	return fmt.Sprintf("PID: %q, Exited: %t, Exit Code: %q, Success: %t, User Time: %q", state.Pid(), state.Exited(), pr.ExitCode(), state.Success(), state.UserTime())
+	return fmt.Sprintf("PID: %d, Exited: %t, Exit Code: %d, Success: %t, User Time: %s", state.Pid(), state.Exited(), pr.ExitCode(), state.Success(), state.UserTime())
 }
 
 // ExitCode returns the exit code of the command denoted by this struct

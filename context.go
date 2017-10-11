@@ -17,6 +17,9 @@ type Context struct {
 	stdout     io.Writer
 	stderr     io.Writer
 	stdin      io.Reader
+
+	successChar string
+	errorChar   string
 }
 
 // NewContext returns a pointer to a new Context.
@@ -28,6 +31,9 @@ func NewContext() (context *Context) {
 	context.stdout = os.Stdout
 	context.stderr = os.Stderr
 	context.stdin = os.Stdin
+
+	context.successChar = "✓"
+	context.errorChar = "✗"
 
 	cwd, err := os.Getwd()
 	if err == nil {

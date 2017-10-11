@@ -46,6 +46,16 @@ func (c *Context) WorkingDir() string {
 	return c.workingDir
 }
 
+// SetWorkingDirTemp changes the current working dir to a temporary directory, returning an error in case something went wrong
+func (c *Context) SetWorkingDirTemp() error {
+	dir, err := c.TempDir()
+	if err != nil {
+		return err
+	}
+	c.SetWorkingDir(dir)
+	return nil
+}
+
 // IsUserRoot checks if a user is root priviledged (Linux and Mac only? Windows?)
 func (c *Context) IsUserRoot() bool {
 	return os.Geteuid() == 0

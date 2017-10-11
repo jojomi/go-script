@@ -18,3 +18,10 @@ func TestIsUserRoot(t *testing.T) {
 	sc := NewContext()
 	assert.False(t, sc.IsUserRoot())
 }
+
+func TestSetWorkingDirTemp(t *testing.T) {
+	sc := NewContext()
+	err := sc.SetWorkingDirTemp()
+	assert.Nil(t, err)
+	assert.Regexp(t, `/tmp/\d+`, sc.WorkingDir())
+}

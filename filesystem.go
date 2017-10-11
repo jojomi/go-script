@@ -50,7 +50,7 @@ func (c *Context) TempFile() (afero.File, error) {
 	return afero.TempFile(c.fs, "", "")
 }
 
-// TempDir guarantees to return a temporary directory, panics otherwise
+// TempDir returns a temporary directory and an error if one occurred
 func (c *Context) TempDir() (string, error) {
 	return afero.TempDir(c.fs, "", "")
 }

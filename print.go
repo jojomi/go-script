@@ -63,12 +63,12 @@ func (c Context) PrintSuccessCheck(inputSuffix ...interface{}) {
 
 // PrintError func
 func (c Context) PrintError(input ...interface{}) {
-	c.terminalize(c.stdout, printError, fmt.Fprint, input...)
+	c.terminalize(c.stderr, printError, fmt.Fprint, input...)
 }
 
 // PrintlnError func
 func (c Context) PrintlnError(input ...interface{}) {
-	c.terminalize(c.stdout, printlnError, fmt.Fprintln, input...)
+	c.terminalize(c.stderr, printlnError, fmt.Fprintln, input...)
 }
 
 // PrintErrorCross func
@@ -78,7 +78,7 @@ func (c Context) PrintErrorCross(inputSuffix ...interface{}) {
 	for index, i := range inputSuffix {
 		input[index+1] = i
 	}
-	c.terminalize(c.stdout, printError, fmt.Fprint, input...)
+	c.terminalize(c.stderr, printError, fmt.Fprint, input...)
 }
 
 // IsTerminal returns if this program is run inside an interactive terminal

@@ -19,6 +19,7 @@ func main() {
 	sc.PrintSuccessCheck("\n")
 	sc.PrintSuccessCheck(" oh yes!\n")
 	sc.PrintlnSuccess("It worked")
+	sc.PrintfSuccess("very %s\n", "well")
 
 	fmt.Println()
 	sc.PrintlnBold("B too?")
@@ -26,7 +27,9 @@ func main() {
 	fmt.Print("No,", "no ")
 	sc.PrintErrorCross("\n")
 	sc.PrintErrorCross(" oh no!\n")
-	sc.PrintlnError("It did not work")
+	sc.PrintError("It did")
+	sc.PrintfError(" not %s", "work")
+	sc.PrintlnError()
 
 	fmt.Println()
 	fmt.Println("I'm done.", "Really.")

@@ -11,19 +11,27 @@ import (
 
 var colorBold = color.New(color.Bold)
 var printBold = colorBold.FprintFunc()
+var printfBold = colorBold.FprintfFunc()
 var printlnBold = colorBold.FprintlnFunc()
 
 var colorSuccess = color.New(color.Bold, color.FgGreen)
 var printSuccess = colorSuccess.FprintFunc()
+var printfSuccess = colorSuccess.FprintfFunc()
 var printlnSuccess = colorSuccess.FprintlnFunc()
 
 var colorError = color.New(color.Bold, color.FgRed)
 var printError = colorError.FprintFunc()
+var printfError = colorError.FprintfFunc()
 var printlnError = colorError.FprintlnFunc()
 
 // PrintBold func
 func (c Context) PrintBold(input ...interface{}) {
 	c.terminalize(c.stdout, printBold, fmt.Fprint, input...)
+}
+
+// PrintfBold func
+func (c Context) PrintfBold(format string, input ...interface{}) {
+	c.terminalizef(c.stdout, printfBold, fmt.Fprintf, format, input...)
 }
 
 // PrintlnBold func
@@ -46,6 +54,11 @@ func (c Context) PrintSuccess(input ...interface{}) {
 	c.terminalize(c.stdout, printSuccess, fmt.Fprint, input...)
 }
 
+// PrintfSuccess func
+func (c Context) PrintfSuccess(format string, input ...interface{}) {
+	c.terminalizef(c.stdout, printfSuccess, fmt.Fprintf, format, input...)
+}
+
 // PrintlnSuccess func
 func (c Context) PrintlnSuccess(input ...interface{}) {
 	c.terminalize(c.stdout, printlnSuccess, fmt.Fprintln, input...)
@@ -64,6 +77,11 @@ func (c Context) PrintSuccessCheck(inputSuffix ...interface{}) {
 // PrintError func
 func (c Context) PrintError(input ...interface{}) {
 	c.terminalize(c.stderr, printError, fmt.Fprint, input...)
+}
+
+// PrintfError func
+func (c Context) PrintfError(format string, input ...interface{}) {
+	c.terminalizef(c.stdout, printfError, fmt.Fprintf, format, input...)
 }
 
 // PrintlnError func
@@ -96,4 +114,16 @@ func (c Context) output(w io.Writer, isTerminal bool, candy func(w io.Writer, in
 		return
 	}
 	candy(w, input...)
+}
+
+func (c Context) terminalizef(w io.Writer, candy func(w io.Writer, format string, input ...interface{}), basic func(w io.Writer, format string, input ...interface{}) (int, error), format string, input ...interface{}) {
+	c.outputf(w, c.IsTerminal(), candy, basic, format, input...)
+}
+
+func (c Context) outputf(w io.Writer, isTerminal bool, candy func(w io.Writer, format string, input ...interface{}), basic func(w io.Writer, format string, input ...interface{}) (int, error), format string, input ...interface{}) {
+	if !isTerminal {
+		basic(w, format, input...)
+		return
+	}
+	candy(w, format, input...)
 }

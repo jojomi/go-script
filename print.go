@@ -121,7 +121,7 @@ func (c Context) terminalizef(w io.Writer, candy func(w io.Writer, format string
 }
 
 func (c Context) outputf(w io.Writer, isTerminal bool, candy func(w io.Writer, format string, input ...interface{}), basic func(w io.Writer, format string, input ...interface{}) (int, error), format string, input ...interface{}) {
-	if !isTerminal {
+	if c.PrintDetectTTY && !isTerminal {
 		basic(w, format, input...)
 		return
 	}

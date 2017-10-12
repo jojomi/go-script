@@ -11,6 +11,8 @@ import (
 // access the buffers and results of commands run in the Context.
 // Using different Contexts it is possible to handle multiple separate environments.
 type Context struct {
+	PrintDetectTTY bool
+
 	workingDir string
 	env        map[string]string
 	fs         afero.Fs
@@ -25,15 +27,18 @@ type Context struct {
 // NewContext returns a pointer to a new Context.
 func NewContext() (context *Context) {
 	// initialize Context
-	context = &Context{}
-	context.env = make(map[string]string, 0)
-	context.fs = afero.NewOsFs()
-	context.stdout = os.Stdout
-	context.stderr = os.Stderr
-	context.stdin = os.Stdin
+	context = &Context{
+		PrintDetectTTY: true,
 
-	context.successChar = "✓"
-	context.errorChar = "✗"
+		env:    make(map[string]string, 0),
+		fs:     afero.NewOsFs(),
+		stdout: os.Stdout,
+		stderr: os.Stderr,
+		stdin:  os.Stdin,
+
+		successChar: "✓",
+		errorChar:   "✗",
+	}
 
 	cwd, err := os.Getwd()
 	if err == nil {

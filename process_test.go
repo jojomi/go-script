@@ -74,6 +74,26 @@ func TestProcessStdin(t *testing.T) {
 
 /* COMMAND EXECUTION */
 
+func TestSplitCommand(t *testing.T) {
+	tests := []struct {
+		input   string
+		command string
+		args    []string
+	}{
+		// simple cases
+		{"ls -la", "ls", []string{"-la"}},
+		{"./bin exit-code-error second_ARG", "./bin", []string{"exit-code-error", "second_ARG"}},
+		// special cases
+		{"", "", []string{}},
+	}
+
+	for _, test := range tests {
+		command, args := SplitCommand(test.input)
+		assert.Equal(t, test.command, command)
+		assert.Equal(t, test.args, args)
+	}
+}
+
 func TestProcessRunFailure(t *testing.T) {
 	sc := processContext()
 	_, err := sc.ExecuteFullySilent(nonExistingBinary)

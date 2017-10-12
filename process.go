@@ -280,3 +280,16 @@ func (c Context) WaitCmd(pr *ProcessResult) {
 	pr.ProcessState = pr.Cmd.ProcessState
 	pr.ProcessError = err
 }
+
+// SplitCommand helper splits a string to command and arbitrarily many args.
+// Does not handle bash specifics like ", ', and \ specially.
+func SplitCommand(input string) (command string, args []string) {
+	parts := strings.Fields(input)
+	if len(parts) == 0 {
+		args = []string{}
+		return
+	}
+	command = parts[0]
+	args = parts[1:]
+	return
+}

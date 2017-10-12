@@ -5,7 +5,7 @@ import (
 	surveyCore "gopkg.in/AlecAivazis/survey.v1/core"
 )
 
-// Confirm
+// Confirm func
 func (c *Context) Confirm(question string, defaultValue bool) (result bool, err error) {
 	prompt := &survey.Confirm{
 		Message: question,

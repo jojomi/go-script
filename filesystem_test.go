@@ -212,7 +212,7 @@ func TestTempFile(t *testing.T) {
 	content := "abcfilecontent"
 	sc := NewContext()
 	sc.fs = afero.NewMemMapFs()
-	file, err := sc.TempFile()
+	file, err := sc.tempFileInternal()
 	assert.Nil(t, err)
 	file.WriteString(content)
 	file.Close()

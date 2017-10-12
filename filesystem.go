@@ -46,7 +46,15 @@ func (c *Context) DirExists(path string) bool {
 }
 
 // TempFile returns a temporary file and an error if one occurred
-func (c *Context) TempFile() (afero.File, error) {
+func (c *Context) TempFile() (*os.File, error) {
+	file, err := c.tempFileInternal()
+	if err != nil {
+		return nil, err
+	}
+	return file.(*os.File), nil
+}
+
+func (c *Context) tempFileInternal() (afero.File, error) {
 	return afero.TempFile(c.fs, "", "")
 }
 

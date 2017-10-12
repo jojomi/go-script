@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 
+	isatty "github.com/mattn/go-isatty"
 	"github.com/spf13/afero"
 )
 
@@ -11,8 +12,6 @@ import (
 // access the buffers and results of commands run in the Context.
 // Using different Contexts it is possible to handle multiple separate environments.
 type Context struct {
-	PrintDetectTTY bool
-
 	workingDir string
 	env        map[string]string
 	fs         afero.Fs
@@ -29,8 +28,6 @@ type Context struct {
 func NewContext() (context *Context) {
 	// initialize Context
 	context = &Context{
-		PrintDetectTTY: true,
-
 		env:    make(map[string]string, 0),
 		fs:     afero.NewOsFs(),
 		stdout: os.Stdout,
@@ -40,7 +37,6 @@ func NewContext() (context *Context) {
 		successChar: "✓",
 		errorChar:   "✗",
 	}
-	context.isTTY = context.IsTerminal()
 
 	cwd, err := os.Getwd()
 	if err == nil {
@@ -72,4 +68,9 @@ func (c *Context) SetWorkingDirTemp() error {
 // IsUserRoot checks if a user is root priviledged (Linux and Mac only? Windows?)
 func (c *Context) IsUserRoot() bool {
 	return os.Geteuid() == 0
+}
+
+// IsTerminal returns if this program is run inside an interactive terminal
+func (c Context) IsTerminal() bool {
+	return os.Getenv("TERM") == "dumb" || (!isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()))
 }

@@ -1,12 +1,7 @@
 package script
 
 import (
-	"fmt"
-	"io"
-	"os"
-
 	"github.com/fatih/color"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 var colorBold = color.New(color.Bold)
@@ -26,42 +21,32 @@ var printlnError = colorError.FprintlnFunc()
 
 // PrintBold func
 func (c Context) PrintBold(input ...interface{}) {
-	c.terminalize(c.stdout, printBold, fmt.Fprint, input...)
+	printBold(c.stdout, input...)
 }
 
 // PrintfBold func
 func (c Context) PrintfBold(format string, input ...interface{}) {
-	c.terminalizef(c.stdout, printfBold, fmt.Fprintf, format, input...)
+	printfBold(c.stdout, format, input...)
 }
 
 // PrintlnBold func
 func (c Context) PrintlnBold(input ...interface{}) {
-	c.terminalize(c.stdout, printlnBold, fmt.Fprintln, input...)
-}
-
-// PrintBoldCheck func
-func (c Context) PrintBoldCheck(inputSuffix ...interface{}) {
-	input := make([]interface{}, len(inputSuffix)+1)
-	input[0] = c.successChar
-	for index, i := range inputSuffix {
-		input[index+1] = i
-	}
-	c.terminalize(c.stdout, printBold, fmt.Fprint, input...)
+	printlnBold(c.stdout, input...)
 }
 
 // PrintSuccess func
 func (c Context) PrintSuccess(input ...interface{}) {
-	c.terminalize(c.stdout, printSuccess, fmt.Fprint, input...)
+	printSuccess(c.stdout, input...)
 }
 
 // PrintfSuccess func
 func (c Context) PrintfSuccess(format string, input ...interface{}) {
-	c.terminalizef(c.stdout, printfSuccess, fmt.Fprintf, format, input...)
+	printfSuccess(c.stdout, format, input...)
 }
 
 // PrintlnSuccess func
 func (c Context) PrintlnSuccess(input ...interface{}) {
-	c.terminalize(c.stdout, printlnSuccess, fmt.Fprintln, input...)
+	printlnSuccess(c.stdout, input...)
 }
 
 // PrintSuccessCheck func
@@ -71,22 +56,22 @@ func (c Context) PrintSuccessCheck(inputSuffix ...interface{}) {
 	for index, i := range inputSuffix {
 		input[index+1] = i
 	}
-	c.terminalize(c.stdout, printSuccess, fmt.Fprint, input...)
+	printSuccess(c.stdout, input...)
 }
 
 // PrintError func
 func (c Context) PrintError(input ...interface{}) {
-	c.terminalize(c.stderr, printError, fmt.Fprint, input...)
+	printError(c.stderr, input...)
 }
 
 // PrintfError func
 func (c Context) PrintfError(format string, input ...interface{}) {
-	c.terminalizef(c.stdout, printfError, fmt.Fprintf, format, input...)
+	printfError(c.stderr, format, input...)
 }
 
 // PrintlnError func
 func (c Context) PrintlnError(input ...interface{}) {
-	c.terminalize(c.stderr, printlnError, fmt.Fprintln, input...)
+	printlnError(c.stderr, input...)
 }
 
 // PrintErrorCross func
@@ -96,35 +81,5 @@ func (c Context) PrintErrorCross(inputSuffix ...interface{}) {
 	for index, i := range inputSuffix {
 		input[index+1] = i
 	}
-	c.terminalize(c.stderr, printError, fmt.Fprint, input...)
-}
-
-// IsTerminal returns if this program is run inside an interactive terminal
-func (c Context) IsTerminal() bool {
-	return terminal.IsTerminal(int(os.Stdout.Fd()))
-}
-
-func (c Context) terminalize(w io.Writer, candy func(w io.Writer, input ...interface{}), basic func(w io.Writer, input ...interface{}) (int, error), input ...interface{}) {
-	c.output(w, c.isTTY, candy, basic, input...)
-}
-
-func (c Context) output(w io.Writer, isTerminal bool, candy func(w io.Writer, input ...interface{}), basic func(w io.Writer, input ...interface{}) (int, error), input ...interface{}) {
-	if c.PrintDetectTTY && !isTerminal {
-		basic(w, input...)
-		return
-	}
-	candy(w, input...)
-}
-
-func (c Context) terminalizef(w io.Writer, candy func(w io.Writer, format string, input ...interface{}), basic func(w io.Writer, format string, input ...interface{}) (int, error), format string, input ...interface{}) {
-	c.outputf(w, c.isTTY, candy, basic, format, input...)
-}
-
-func (c Context) outputf(w io.Writer, isTerminal bool, candy func(w io.Writer, format string, input ...interface{}), basic func(w io.Writer, format string, input ...interface{}) (int, error), format string, input ...interface{}) {
-	fmt.Println("detect", c.PrintDetectTTY, "isTTY", isTerminal)
-	if c.PrintDetectTTY && !isTerminal {
-		basic(w, format, input...)
-		return
-	}
-	candy(w, format, input...)
+	printError(c.stderr, input...)
 }

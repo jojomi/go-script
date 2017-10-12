@@ -105,11 +105,11 @@ func (c Context) IsTerminal() bool {
 }
 
 func (c Context) terminalize(w io.Writer, candy func(w io.Writer, input ...interface{}), basic func(w io.Writer, input ...interface{}) (int, error), input ...interface{}) {
-	c.output(w, c.IsTerminal(), candy, basic, input...)
+	c.output(w, c.isTTY, candy, basic, input...)
 }
 
 func (c Context) output(w io.Writer, isTerminal bool, candy func(w io.Writer, input ...interface{}), basic func(w io.Writer, input ...interface{}) (int, error), input ...interface{}) {
-	if !isTerminal {
+	if c.PrintDetectTTY && !isTerminal {
 		basic(w, input...)
 		return
 	}
@@ -117,10 +117,11 @@ func (c Context) output(w io.Writer, isTerminal bool, candy func(w io.Writer, in
 }
 
 func (c Context) terminalizef(w io.Writer, candy func(w io.Writer, format string, input ...interface{}), basic func(w io.Writer, format string, input ...interface{}) (int, error), format string, input ...interface{}) {
-	c.outputf(w, c.IsTerminal(), candy, basic, format, input...)
+	c.outputf(w, c.isTTY, candy, basic, format, input...)
 }
 
 func (c Context) outputf(w io.Writer, isTerminal bool, candy func(w io.Writer, format string, input ...interface{}), basic func(w io.Writer, format string, input ...interface{}) (int, error), format string, input ...interface{}) {
+	fmt.Println("detect", c.PrintDetectTTY, "isTTY", isTerminal)
 	if c.PrintDetectTTY && !isTerminal {
 		basic(w, format, input...)
 		return

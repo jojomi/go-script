@@ -19,6 +19,7 @@ type Context struct {
 	stdout     io.Writer
 	stderr     io.Writer
 	stdin      io.Reader
+	isTTY      bool
 
 	successChar string
 	errorChar   string
@@ -39,6 +40,7 @@ func NewContext() (context *Context) {
 		successChar: "✓",
 		errorChar:   "✗",
 	}
+	context.isTTY = context.IsTerminal()
 
 	cwd, err := os.Getwd()
 	if err == nil {

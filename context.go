@@ -72,5 +72,5 @@ func (c *Context) IsUserRoot() bool {
 
 // IsTerminal returns if this program is run inside an interactive terminal
 func (c Context) IsTerminal() bool {
-	return os.Getenv("TERM") == "dumb" || (!isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()))
+	return !(os.Getenv("TERM") == "dumb" || (!isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd())))
 }

@@ -14,6 +14,18 @@
   version = "v1.5.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/gernest/wow"
+  packages = [".","spin"]
+  revision = "57298475c6371a5a652e74dcf624c80edfc5ae1a"
+
+[[projects]]
+  name = "github.com/magefile/mage"
+  packages = ["mg","sh"]
+  revision = "a12fd02e5be9f086fccabd7fcd456cf3964bd9af"
+  version = "v1"
+
+[[projects]]
   name = "github.com/mattn/go-colorable"
   packages = ["."]
   revision = "167de6bfdfba052fa6b2d3664c8f5272e23c9072"
@@ -76,6 +88,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "4ee1ed6dba340f176312819b7d75af800cc6933e55a23eca5bdf45564baab5b7"
+  inputs-digest = "9859870800b059cf4360af2507a96066646e3f52a87ad5052cfba32aa90d48ea"
   solver-name = "gps-cdcl"
   solver-version = 1

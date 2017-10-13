@@ -91,6 +91,23 @@ func TestWithoutTrailingPathSep(t *testing.T) {
 	assert.Equal(t, "/abc/dir", sc.WithoutTrailingPathSep("/abc/dir/"))
 }
 
+func TestResolveSymlinks(t *testing.T) {
+	sc := NewContext()
+	fs := afero.NewMemMapFs()
+	sc.fs = fs
+	sc.SetWorkingDir("/test")
+
+	err := sc.ResolveSymlinks("dir-non-existing")
+	assert.Nil(t, err)
+
+	fs.MkdirAll("/test/dir", 0700)
+	afero.WriteFile(fs, "/test/dir/file.txt", []byte("This is my content"), os.FileMode(0644))
+	err = sc.ResolveSymlinks("dir")
+	assert.Nil(t, err)
+
+	// TODO test actual symlinks (can afero mock os.Symlink to its MemFS?)
+}
+
 func TestEnsureDirExists(t *testing.T) {
 	path := "/start"
 	dir := "abcde"

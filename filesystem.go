@@ -111,7 +111,12 @@ func (c *Context) ResolveSymlinks(dir string) error {
 		linkTargetPath string
 		targetInfo     os.FileInfo
 	)
-	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+	// directory does not exist -> nothing to do
+	dir = c.AbsPath(dir)
+	if !c.DirExists(dir) {
+		return nil
+	}
+	err = afero.Walk(c.fs, dir, func(path string, info os.FileInfo, err error) error {
 		// symlink?
 		if info.Mode()&os.ModeSymlink == os.ModeSymlink {
 			// resolve

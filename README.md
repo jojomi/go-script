@@ -1,4 +1,5 @@
 # go-script
+
 Go library facilitating the creation of programs that resemble bash scripts.
 
 
@@ -6,14 +7,18 @@ Go library facilitating the creation of programs that resemble bash scripts.
 
 [Go](https://golang.org)'s advantages like static binding and a huge modern standard library do suggest its usage for little tools that used to be implemented as shell scripts.
 
-This library is intended as a wrapper for typical tasks shell scripts include and aimed at bringing the LOC size closer to unparalleled bash shortness.
+This library is intended as a wrapper for typical tasks shell scripts include and aimed at bringing the LOC size closer to unparalleled `bash` shortness.
+
+`go-script` uses several other libraries that enable you to create scripts with a good user feedback and user interface on the command line.
+
+This library strives for a good test coverage even though it is not always easy for user facing code like this.
 
 
 ## Methods
 
 [![GoDoc](https://godoc.org/github.com/jojomi/go-script?status.svg)](https://godoc.org/github.com/jojomi/go-script) ![Coverage](http://gocover.io/_badge/github.com/jojomi/go-script)
 
-The methods include helpers for executing external commands, maintaining a working directory, handling files and directories (cp/mv), and evaluating command output (exit code, stdout/stderr).
+The methods include helpers for [executing external commands](process.go) (including [environment variables](environment.go)), maintaining a [working directory](context.go), handling [files and directories](filesystem.go) (cp/mv), and evaluating [command output](process.go) (exit code, stdout/stderr). You can use methods for [requesting input](interaction.go) from users, print [progress bars and activity indicators](progress.go), and use helpers for [printing colorful or bold text](print.go).
 
 
 ## Usage
@@ -38,24 +43,37 @@ func main() {
 
 More example can be found in the `examples` directory, execute them like this:
 
-`go run examples/command-checking.go`
+`go run examples/command-checking/command-checking.go`
 
 
 ## Warning
 
-This library's API is not yet stable. Consider it ALPHA software at this time.
-Thus you should be prepared for future API changes of any kind. In doubt, fork
-away to keep a certain API status.
+This library's API is not yet stable. Use at your own discretion.
+
+You should be prepared for future API changes of any kind.
+
+In doubt, fork
+away to keep a certain API status or use vendoring ([dep](https://github.com/golang/dep)) to keep your desired state.
 
 
-## Useful Libraries
+## On The Shoulders or Giants
 
-Some libraries have proven highly useful in conjunction with go-script:
+### Libraries Used in `go-script`
 
-* [color](https://github.com/fatih/color)
+* [go-isatty](github.com/mattn/go-isatty) to detect terminal capabilities
+* [survey](gopkg.in/AlecAivazis/survey.v1) for user interactions
+* [wow](github.com/gernest/wow) for activity indicators
+* [pb](gopkg.in/cheggaaa/pb.v1) for progress bars
+* [color](https://github.com/fatih/color) for printing colorful and bold output
+* [go-shutil](https://github.com/termie/go-shutil) (forked) for copying data
+
+* [afero](github.com/spf13/afero) for abstracting filesystem for easier testing
+
+### Other Libraries
+
+Some libraries have proven highly useful in conjunction with `go-script`:
+
 * [termtables](https://github.com/apcera/termtables)
-* [uiprogress](https://github.com/gosuri/uiprogress)
-* [pipe](https://github.com/go-pipe/pipe)
 
 More inspiration can be found at [awesome-go](https://github.com/avelino/awesome-go#command-line).
 

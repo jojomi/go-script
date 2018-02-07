@@ -85,6 +85,10 @@ func TestSplitCommand(t *testing.T) {
 		{"./bin exit-code-error second_ARG", "./bin", []string{"exit-code-error", "second_ARG"}},
 		// special cases
 		{"", "", []string{}},
+		// quoting
+		{`"quoted bin" "fir st" 'sec ond'`, "quoted bin", []string{"fir st", "sec ond"}},
+		{`bin -p  "fir st"   "sec ond"`, "bin", []string{"-p", "fir st", "sec ond"}},
+		{`"\"bin" 'par am"'`, "\"bin", []string{"par am\""}},
 	}
 
 	for _, test := range tests {

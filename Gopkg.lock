@@ -17,13 +17,13 @@
   branch = "master"
   name = "github.com/gernest/wow"
   packages = [".","spin"]
-  revision = "57298475c6371a5a652e74dcf624c80edfc5ae1a"
+  revision = "7e0b2a2398989a5d220eebac5742d45422ba7de8"
 
 [[projects]]
   name = "github.com/magefile/mage"
-  packages = ["mg","sh"]
-  revision = "a12fd02e5be9f086fccabd7fcd456cf3964bd9af"
-  version = "v1"
+  packages = ["mg","sh","types"]
+  revision = "ab3ca2f6f85577d7ec82e0a6df721147a2e737f9"
+  version = "v2.0.1"
 
 [[projects]]
   name = "github.com/mattn/go-colorable"
@@ -38,6 +38,12 @@
   version = "v0.0.3"
 
 [[projects]]
+  name = "github.com/mattn/go-runewidth"
+  packages = ["."]
+  revision = "9e777a8366cce605130a531d2cd6363d07ad7317"
+  version = "v0.0.2"
+
+[[projects]]
   branch = "master"
   name = "github.com/mgutz/ansi"
   packages = ["."]
@@ -50,44 +56,50 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "master"
   name = "github.com/spf13/afero"
   packages = [".","mem"]
-  revision = "e67d870304c4bca21331b02f414f970df13aa694"
+  revision = "bb8f1927f2a9d3ab41c9340aa034f6b803f4359c"
+  version = "v1.0.2"
 
 [[projects]]
   name = "github.com/stretchr/testify"
   packages = ["assert"]
-  revision = "69483b4bd14f5845b5a1e55bca19e954e827f1d0"
-  version = "v1.1.4"
+  revision = "12b6f73e6084dad08a7c6e575284b177ecafbc71"
+  version = "v1.2.1"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "9419663f5a44be8b34ca85f08abc5fe1be11f8a3"
+  revision = "d9133f5469342136e669e85192a26056b587f503"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix","windows"]
-  revision = "ebfc5b4631820b793c9010c87fd8fef0f39eb082"
+  revision = "37707fdb30a5b38865cfb95e5aab41707daec7fd"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/text"
   packages = ["internal/gen","internal/triegen","internal/ucd","transform","unicode/cldr","unicode/norm"]
-  revision = "825fc78a2fd6fa0a5447e300189e3219e05e1f25"
+  revision = "e19ae1496984b1c655b8044a65c0300a3c878dd3"
 
 [[projects]]
   name = "gopkg.in/AlecAivazis/survey.v1"
   packages = [".","core","terminal"]
-  revision = "18a4dbb1d9d05349aea1a2bf9c84028c36817c10"
-  version = "v1.3.4"
+  revision = "0aa8b6a162b391fe2d95648b7677d1d6ac2090a6"
+  version = "v1.4.1"
+
+[[projects]]
+  name = "gopkg.in/cheggaaa/pb.v1"
+  packages = ["."]
+  revision = "5119518d88fbf604cab04dafd667dc7022e3b5ac"
+  version = "v1.0.21"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9859870800b059cf4360af2507a96066646e3f52a87ad5052cfba32aa90d48ea"
+  inputs-digest = "cbdc56fc3e27e3df35155b1d5d910e202a65b23ad49ff83ca72e070cffa7f6e9"
   solver-name = "gps-cdcl"
   solver-version = 1

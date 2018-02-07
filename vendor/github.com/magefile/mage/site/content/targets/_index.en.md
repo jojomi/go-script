@@ -2,8 +2,14 @@
 title = "Targets"
 weight = 10
 +++
-Any exported function that is either `func()` or `func() error` is considered a
-mage target.  A target is effectively a subcommand of mage while running mage in
+A target is any exported function that is one of the following types:
+```
+func()
+func() error 
+func(context.Context)
+func(context.Context) error
+```
+A target is effectively a subcommand of mage while running mage in
 this directory.  i.e. you can run a target by running `mage <target>`
 
 If the function has an error return, errors returned from the function will
@@ -20,6 +26,25 @@ A target may be designated the default target, which is run when the user runs
 <targetname>`  If no default target is specified, running `mage` with no target
 will print the list of targets, like `mage -l`.
 
-Currently only a single target may be run at a single time.  Attempting to run
-multiple targets from a single invocation of mage will result in an error.  This
-may change in the future.
+## Multiple Targets
+
+Multiple targets can be specified as args to Mage, for example `mage foo bar
+baz`.  Targets will be run serially, from left to right (so in thise case, foo,
+then once foo is done, bar, then once bar is done, baz).  Dependencies run using
+mg.Deps will still only run once per mage execution, so if each of the targets
+depend on the same function, that function will only be run once for all
+targets.  If any target panics or returns an error, no later targets will be run.
+
+## Contexts and Cancellation
+
+A default context is passed into any target with a context argument.  This
+context will have a timeout if mage was run with -t, and thus will cancel the
+running targets and dependencies at that time.  To pass this context to
+dependencies, use mg.CtxDeps(ctx, ...) to pass the context from the target to
+its dependencies (and pass the context to sub-dependencies).  Dependencies run
+with mg.Deps will not get the starting context, and thus will not be cancelled
+when the timeout set with -t expires.
+
+mg.CtxDeps will pass along whatever context you give it, so if you want to
+modify the original context, or pass in your own, that will work like you expect
+it to.

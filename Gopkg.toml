@@ -36,3 +36,11 @@
 [[constraint]]
   name = "gopkg.in/AlecAivazis/survey.v1"
   version = "1.3.4"
+
+[[constraint]]
+  name = "github.com/cheggaaa/pb"
+  version = "2.0.4"
+
+[[constraint]]
+  name = "gopkg.in/cheggaaa/pb.v1"
+  version = "1.0.18"

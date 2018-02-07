@@ -4,13 +4,18 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"go/parser"
+	"go/token"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
+	"github.com/magefile/mage/build"
 	"github.com/magefile/mage/mg"
 )
 
@@ -30,7 +35,11 @@ func testmain(m *testing.M) int {
 		log.Fatal(err)
 	}
 	if err := os.Mkdir(dir, 0700); err != nil {
-		log.Fatal(err)
+		if os.IsExist(err) {
+			os.RemoveAll(dir)
+		} else {
+			log.Fatal(err)
+		}
 	}
 	defer os.RemoveAll(dir)
 	return m.Run()
@@ -79,7 +88,7 @@ func TestVerbose(t *testing.T) {
 	}
 
 	actual = stderr.String()
-	expected = "hi!\n"
+	expected = "Running target: TestVerbose\nhi!\n"
 	if actual != expected {
 		t.Fatalf("expected %q, but got %q", expected, actual)
 	}
@@ -97,7 +106,7 @@ func TestVerboseEnv(t *testing.T) {
 	expected := true
 
 	if inv.Verbose != true {
-		t.Fatalf("expected %t, but got %t", expected, inv.Verbose)
+		t.Fatalf("expected %t, but got %t ", expected, inv.Verbose)
 	}
 
 	os.Unsetenv("MAGE_VERBOSE")
@@ -106,7 +115,7 @@ func TestVerboseEnv(t *testing.T) {
 func TestList(t *testing.T) {
 	stdout := &bytes.Buffer{}
 	inv := Invocation{
-		Dir:    "./testdata",
+		Dir:    "./testdata/list",
 		Stdout: stdout,
 		Stderr: ioutil.Discard,
 		List:   true,
@@ -119,17 +128,16 @@ func TestList(t *testing.T) {
 	actual := stdout.String()
 	expected := `
 Targets:
-  panics                Function that panics.
-  panicsErr             Error function that panics.
-  returnsError*         Synopsis for returns error.
-  returnsNonNilError    Returns a non-nil error.
-  returnsVoid           
-  testVerbose           
+  somePig*       This is the synopsis for SomePig.
+  testVerbose    
 
 * default target
 `[1:]
+
 	if actual != expected {
-		t.Fatalf("expected:\n%s\n\ngot:\n%s", expected, actual)
+		t.Logf("expected: %q", expected)
+		t.Logf("  actual: %q", actual)
+		t.Fatalf("expected:\n%v\n\ngot:\n%v", expected, actual)
 	}
 }
 
@@ -173,6 +181,27 @@ func TestTargetError(t *testing.T) {
 	}
 	actual := stderr.String()
 	expected := "Error: bang!\n"
+	if actual != expected {
+		t.Fatalf("expected %q, but got %q", expected, actual)
+	}
+}
+
+func TestStdinCopy(t *testing.T) {
+	stdout := &bytes.Buffer{}
+	stdin := strings.NewReader("hi!")
+	inv := Invocation{
+		Dir:    "./testdata",
+		Stderr: ioutil.Discard,
+		Stdout: stdout,
+		Stdin:  stdin,
+		Args:   []string{"CopyStdin"},
+	}
+	code := Invoke(inv)
+	if code != 0 {
+		t.Fatalf("expected 0, but got %v", code)
+	}
+	actual := stdout.String()
+	expected := "hi!"
 	if actual != expected {
 		t.Fatalf("expected %q, but got %q", expected, actual)
 	}
@@ -238,12 +267,15 @@ func TestKeepFlag(t *testing.T) {
 	buildFile := fmt.Sprintf("./testdata/keep_flag/%s", mainfile)
 	os.Remove(buildFile)
 	defer os.Remove(buildFile)
+	w := tLogWriter{t}
+
 	inv := Invocation{
 		Dir:    "./testdata/keep_flag",
-		Stdout: ioutil.Discard,
-		Stderr: ioutil.Discard,
-		Args:   []string{"noop"},
+		Stdout: w,
+		Stderr: w,
+		List:   true,
 		Keep:   true,
+		Force:  true, // need force so we always regenerate
 	}
 	code := Invoke(inv)
 	if code != 0 {
@@ -255,24 +287,135 @@ func TestKeepFlag(t *testing.T) {
 	}
 }
 
-func TestStopMultipleTargets(t *testing.T) {
-	stderr := &bytes.Buffer{}
+type tLogWriter struct {
+	*testing.T
+}
+
+func (t tLogWriter) Write(b []byte) (n int, err error) {
+	t.Log(string(b))
+	return len(b), nil
+}
+
+// Test if generated mainfile references anything other than the stdlib
+func TestOnlyStdLib(t *testing.T) {
+	buildFile := fmt.Sprintf("./testdata/onlyStdLib/%s", mainfile)
+	os.Remove(buildFile)
+	defer os.Remove(buildFile)
+
+	w := tLogWriter{t}
+
+	inv := Invocation{
+		Dir:     "./testdata/onlyStdLib",
+		Stdout:  w,
+		Stderr:  w,
+		List:    true,
+		Keep:    true,
+		Force:   true, // need force so we always regenerate
+		Verbose: true,
+	}
+	code := Invoke(inv)
+	if code != 0 {
+		t.Fatalf("expected code 0, but got %v", code)
+	}
+
+	if _, err := os.Stat(buildFile); err != nil {
+		t.Fatalf("expected file %q to exist but got err, %v", buildFile, err)
+	}
+
+	fset := &token.FileSet{}
+	// Parse src but stop after processing the imports.
+	f, err := parser.ParseFile(fset, buildFile, nil, parser.ImportsOnly)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// Print the imports from the file's AST.
+	for _, s := range f.Imports {
+		// the path value comes in as a quoted string, i.e. literally \"context\"
+		path := strings.Trim(s.Path.Value, "\"")
+		pkg, err := build.Default.Import(path, "./testdata/keep_flag", build.FindOnly)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !filepath.HasPrefix(pkg.Dir, build.Default.GOROOT) {
+			t.Errorf("import of non-stdlib package: %s", s.Path.Value)
+		}
+	}
+}
+
+func TestMultipleTargets(t *testing.T) {
+	var stderr, stdout bytes.Buffer
+	inv := Invocation{
+		Dir:     "./testdata",
+		Stdout:  &stdout,
+		Stderr:  &stderr,
+		Args:    []string{"TestVerbose", "ReturnsNilError"},
+		Verbose: true,
+	}
+	code := Invoke(inv)
+	if code != 0 {
+		t.Errorf("expected 0, but got %v", code)
+	}
+	actual := stderr.String()
+	expected := "Running target: TestVerbose\nhi!\nRunning target: ReturnsNilError\n"
+	if actual != expected {
+		t.Errorf("expected %q, but got %q", expected, actual)
+	}
+	actual = stdout.String()
+	expected = "stuff\n"
+	if actual != expected {
+		t.Errorf("expected %q, but got %q", expected, actual)
+	}
+}
+
+func TestFirstTargetFails(t *testing.T) {
+	var stderr, stdout bytes.Buffer
+	inv := Invocation{
+		Dir:     "./testdata",
+		Stdout:  &stdout,
+		Stderr:  &stderr,
+		Args:    []string{"ReturnsNonNilError", "ReturnsNilError"},
+		Verbose: true,
+	}
+	code := Invoke(inv)
+	if code != 1 {
+		t.Errorf("expected 1, but got %v", code)
+	}
+	actual := stderr.String()
+	expected := "Running target: ReturnsNonNilError\nError: bang!\n"
+	if actual != expected {
+		t.Errorf("expected %q, but got %q", expected, actual)
+	}
+	actual = stdout.String()
+	expected = ""
+	if actual != expected {
+		t.Errorf("expected %q, but got %q", expected, actual)
+	}
+}
+
+func TestBadSecondTargets(t *testing.T) {
+	var stderr, stdout bytes.Buffer
 	inv := Invocation{
 		Dir:    "./testdata",
-		Stdout: ioutil.Discard,
-		Stderr: stderr,
-		Args:   []string{"panicserr", "testVerbose"},
+		Stdout: &stdout,
+		Stderr: &stderr,
+		Args:   []string{"TestVerbose", "NotGonnaWork"},
 	}
 	code := Invoke(inv)
 	if code != 2 {
-		t.Fatalf("expected 1, but got %v", code)
+		t.Errorf("expected 0, but got %v", code)
 	}
 	actual := stderr.String()
-	expected := "Error: args after the target (panicserr) are not allowed: testVerbose\n"
+	expected := "Unknown target specified: NotGonnaWork\n"
 	if actual != expected {
-		t.Fatalf("expected %q, but got %q", expected, actual)
+		t.Errorf("expected %q, but got %q", expected, actual)
 	}
-
+	actual = stdout.String()
+	expected = ""
+	if actual != expected {
+		t.Errorf("expected %q, but got %q", expected, actual)
+	}
 }
 
 func TestParse(t *testing.T) {
@@ -296,6 +439,27 @@ func TestParse(t *testing.T) {
 
 }
 
+// Test the timeout option
+func TestTimeout(t *testing.T) {
+	stderr := &bytes.Buffer{}
+	inv := Invocation{
+		Dir:     "./testdata/context",
+		Stdout:  ioutil.Discard,
+		Stderr:  stderr,
+		Args:    []string{"timeout"},
+		Timeout: time.Duration(100 * time.Millisecond),
+	}
+	code := Invoke(inv)
+	if code != 1 {
+		t.Fatalf("expected 1, but got %v", code)
+	}
+	actual := stderr.String()
+	expected := "Error: context deadline exceeded\n"
+
+	if actual != expected {
+		t.Fatalf("expected %q, but got %q", expected, actual)
+	}
+}
 func TestParseHelp(t *testing.T) {
 	buf := &bytes.Buffer{}
 	_, _, _, err := Parse(buf, []string{"-h"})
@@ -312,5 +476,4 @@ func TestParseHelp(t *testing.T) {
 	if s != s2 {
 		t.Fatalf("expected -h and --help to produce same output, but got different.\n\n-h:\n%s\n\n--help:\n%s", s, s2)
 	}
-
 }

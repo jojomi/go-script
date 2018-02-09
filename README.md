@@ -16,7 +16,10 @@ This library strives for a good test coverage even though it is not always easy 
 
 ## Methods
 
-[![GoDoc](https://godoc.org/github.com/jojomi/go-script?status.svg)](https://godoc.org/github.com/jojomi/go-script) ![Coverage](http://gocover.io/_badge/github.com/jojomi/go-script)
+[![GoDoc](https://godoc.org/github.com/jojomi/go-script?status.svg)](https://godoc.org/github.com/jojomi/go-script)
+![![CircleCI](https://circleci.com/gh/jojomi/go-script.svg?style=svg)](https://circleci.com/gh/jojomi/go-script)
+[![Coverage Status](https://coveralls.io/repos/github/jojomi/go-script/badge.svg?branch=master)](https://coveralls.io/github/jojomi/go-script?branch=master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jojomi/go-script)](https://goreportcard.com/report/github.com/jojomi/go-script)
 
 The methods include helpers for [executing external commands](process.go) (including [environment variables](environment.go)), maintaining a [working directory](context.go), handling [files and directories](filesystem.go) (cp/mv), and evaluating [command output](process.go) (exit code, stdout/stderr). You can use methods for [requesting input](interaction.go) from users, print [progress bars and activity indicators](progress.go), and use helpers for [printing colorful or bold text](print.go).
 

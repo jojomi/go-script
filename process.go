@@ -95,7 +95,7 @@ func (pr *ProcessResult) ExitCode() (int, error) {
 	return waitStatus.ExitStatus(), nil
 }
 
-// CommandPath finds the full path of a binary given its name. This requires the wich command to be present in the system.
+// CommandPath finds the full path of a binary given its name.
 // also see https://golang.org/pkg/os/exec/#LookPath
 func (c *Context) CommandPath(name string) (path string) {
 	path, err := exec.LookPath(name)

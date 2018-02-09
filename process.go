@@ -96,13 +96,13 @@ func (pr *ProcessResult) ExitCode() (int, error) {
 }
 
 // CommandPath finds the full path of a binary given its name. This requires the wich command to be present in the system.
-func (c *Context) CommandPath(name string) string {
-	cmd := exec.Command("which", name)
-	cmdOutput, err := cmd.Output()
+// also see https://golang.org/pkg/os/exec/#LookPath
+func (c *Context) CommandPath(name string) (path string) {
+	path, err := exec.LookPath(name)
 	if err != nil {
 		return ""
 	}
-	return strings.Trim(string(cmdOutput), "\n")
+	return
 }
 
 // CommandExists checks if a given binary exists in PATH.

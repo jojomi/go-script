@@ -282,7 +282,7 @@ func (c Context) WaitCmd(pr *ProcessResult) {
 }
 
 // SplitCommand helper splits a string to command and arbitrarily many args.
-// Does not handle bash specifics like ", ', and \ specially.
+// Does handle bash-like escaping (\) and string delimiters " and '.
 func SplitCommand(input string) (command string, args []string) {
 	quotes := []string{`"`, `'`}
 

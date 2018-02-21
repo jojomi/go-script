@@ -1,6 +1,8 @@
 package script
 
 import (
+	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -39,4 +41,49 @@ func TestFileHasContentRegexp(t *testing.T) {
 	has, err = sc.FileHasContentRegexp("file.cfg", `gitlab\.com`)
 	assert.Nil(t, err)
 	assert.False(t, has)
+}
+
+func TestReplaceInFile(t *testing.T) {
+	tests := []struct {
+		content  string
+		replace  string
+		with     string
+		expected string
+	}{
+		// string based (attention, always using RegExp syntax internally!)
+		{
+			content:  `useTLS: yes`,
+			replace:  `useTLS: yes`,
+			with:     `useTLS: no`,
+			expected: `useTLS: no`,
+		},
+		// using backreferences
+		{
+			content:  `useTLS: yes`,
+			replace:  `(useTLS): yes`,
+			with:     `$1: no`,
+			expected: `useTLS: no`,
+		},
+		// multiple replacements
+		{
+			content:  `I have many many more ideas.`,
+			replace:  `many\s*`,
+			with:     ``,
+			expected: `I have more ideas.`,
+		},
+	}
+
+	sc := NewContext()
+	sc.SetWorkingDir(".")
+
+	filename := "test/service.cfg"
+
+	for _, test := range tests {
+		makeFile(sc, filename, test.content)
+		err := sc.ReplaceInFile(filename, test.replace, test.with)
+		assert.Nil(t, err)
+		output, _ := ioutil.ReadFile(sc.AbsPath(filename))
+		assert.Equal(t, test.expected, string(output))
+		os.Remove(filename)
+	}
 }

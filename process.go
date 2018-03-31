@@ -26,6 +26,8 @@ type ProcessResult struct {
 
 // CommandConfig defines details of command execution.
 type CommandConfig struct {
+	RawStdout    bool
+	RawStderr    bool
 	OutputStdout bool
 	OutputStderr bool
 	ConnectStdin bool
@@ -115,6 +117,16 @@ func (c *Context) MustCommandExist(name string) {
 	if !c.CommandExists(name) {
 		panic(fmt.Errorf("Command %s is not available. Please make sure it is installed and accessible.", name))
 	}
+}
+
+// ExecuteRaw executes a system command without touching stdout and stderr.
+func (c *Context) ExecuteRaw(name string, args ...string) (pr *ProcessResult, err error) {
+	pr, err = c.Execute(CommandConfig{
+		RawStdout:    true,
+		RawStderr:    true,
+		ConnectStdin: true,
+	}, name, args...)
+	return
 }
 
 // ExecuteDebug executes a system command, stdout and stderr are piped
@@ -257,15 +269,23 @@ func (c Context) prepareCommand(cc CommandConfig, name string, args ...string) (
 	cmd.Dir = c.workingDir
 	cmd.Env = c.getFullEnv()
 
-	if !cc.OutputStdout {
-		cmd.Stdout = pr.stdoutBuffer
+	if cc.RawStdout {
+		cmd.Stdout = os.Stdout
 	} else {
-		cmd.Stdout = io.MultiWriter(c.stdout, pr.stdoutBuffer)
+		if !cc.OutputStdout {
+			cmd.Stdout = pr.stdoutBuffer
+		} else {
+			cmd.Stdout = io.MultiWriter(c.stdout, pr.stdoutBuffer)
+		}
 	}
-	if !cc.OutputStderr {
-		cmd.Stderr = pr.stderrBuffer
+	if cc.RawStderr {
+		cmd.Stderr = os.Stderr
 	} else {
-		cmd.Stderr = io.MultiWriter(c.stderr, pr.stderrBuffer)
+		if !cc.OutputStderr {
+			cmd.Stderr = pr.stderrBuffer
+		} else {
+			cmd.Stderr = io.MultiWriter(c.stderr, pr.stderrBuffer)
+		}
 	}
 
 	if cc.ConnectStdin {

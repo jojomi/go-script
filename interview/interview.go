@@ -1,12 +1,12 @@
-package script
+package interview
 
 import (
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	surveyCore "gopkg.in/AlecAivazis/survey.v1/core"
 )
 
 // Confirm func
-func (c *Context) Confirm(question string, defaultValue bool) (result bool, err error) {
+func Confirm(question string, defaultValue bool) (result bool, err error) {
 	prompt := &survey.Confirm{
 		Message: question,
 		Default: defaultValue,
@@ -16,7 +16,7 @@ func (c *Context) Confirm(question string, defaultValue bool) (result bool, err 
 }
 
 // ChooseOneString func
-func (c *Context) ChooseOneString(question string, options []string) (result string, err error) {
+func ChooseOneString(question string, options []string) (result string, err error) {
 	surveyCore.QuestionIcon = "?"
 
 	prompt := &survey.Select{
@@ -28,7 +28,7 @@ func (c *Context) ChooseOneString(question string, options []string) (result str
 }
 
 // ChooseMultiStrings func
-func (c *Context) ChooseMultiStrings(question string, options []string) (results []string, err error) {
+func ChooseMultiStrings(question string, options []string) (results []string, err error) {
 	surveyCore.QuestionIcon = "?"
 
 	prompt := &survey.MultiSelect{

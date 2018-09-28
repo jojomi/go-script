@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
-	"strings"
 	"syscall"
 )
 
@@ -120,54 +119,54 @@ func (c *Context) MustCommandExist(name string) {
 }
 
 // ExecuteRaw executes a system command without touching stdout and stderr.
-func (c *Context) ExecuteRaw(name string, args ...string) (pr *ProcessResult, err error) {
+func (c *Context) ExecuteRaw(command Command) (pr *ProcessResult, err error) {
 	pr, err = c.Execute(CommandConfig{
 		RawStdout:    true,
 		RawStderr:    true,
 		ConnectStdin: true,
-	}, name, args...)
+	}, command)
 	return
 }
 
 // ExecuteDebug executes a system command, stdout and stderr are piped
-func (c *Context) ExecuteDebug(name string, args ...string) (pr *ProcessResult, err error) {
+func (c *Context) ExecuteDebug(command Command) (pr *ProcessResult, err error) {
 	pr, err = c.Execute(CommandConfig{
 		OutputStdout: true,
 		OutputStderr: true,
 		ConnectStdin: true,
-	}, name, args...)
+	}, command)
 	return
 }
 
 // ExecuteSilent executes a  system command without outputting stdout (it is
 // still captured and can be retrieved using the returned ProcessResult)
-func (c *Context) ExecuteSilent(name string, args ...string) (pr *ProcessResult, err error) {
+func (c *Context) ExecuteSilent(command Command) (pr *ProcessResult, err error) {
 	pr, err = c.Execute(CommandConfig{
 		OutputStdout: false,
 		OutputStderr: true,
 		ConnectStdin: true,
-	}, name, args...)
+	}, command)
 	return
 }
 
 // ExecuteFullySilent executes a system command without outputting stdout or
 // stderr (both are still captured and can be retrieved using the returned ProcessResult)
-func (c *Context) ExecuteFullySilent(name string, args ...string) (pr *ProcessResult, err error) {
+func (c *Context) ExecuteFullySilent(command Command) (pr *ProcessResult, err error) {
 	pr, err = c.Execute(CommandConfig{
 		OutputStdout: false,
 		OutputStderr: false,
 		ConnectStdin: true,
-	}, name, args...)
+	}, command)
 	return
 }
 
 // MustExecuteDebug ensures a system command to be executed, otherwise panics
-func (c *Context) MustExecuteDebug(name string, args ...string) (pr *ProcessResult) {
+func (c *Context) MustExecuteDebug(command Command) (pr *ProcessResult) {
 	pr, err := c.Execute(CommandConfig{
 		OutputStdout: true,
 		OutputStderr: true,
 		ConnectStdin: true,
-	}, name, args...)
+	}, command)
 	if err != nil {
 		panic(err)
 	}
@@ -176,12 +175,12 @@ func (c *Context) MustExecuteDebug(name string, args ...string) (pr *ProcessResu
 
 // MustExecuteSilent ensures a system command to be executed without outputting
 // stdout, otherwise panics
-func (c *Context) MustExecuteSilent(name string, args ...string) (pr *ProcessResult) {
+func (c *Context) MustExecuteSilent(command Command) (pr *ProcessResult) {
 	pr, err := c.Execute(CommandConfig{
 		OutputStdout: false,
 		OutputStderr: true,
 		ConnectStdin: true,
-	}, name, args...)
+	}, command)
 	if err != nil {
 		panic(err)
 	}
@@ -190,12 +189,12 @@ func (c *Context) MustExecuteSilent(name string, args ...string) (pr *ProcessRes
 
 // MustExecuteFullySilent ensures a system command to be executed without
 // outputting stdout and stderr, otherwise panics
-func (c *Context) MustExecuteFullySilent(name string, args ...string) (pr *ProcessResult) {
+func (c *Context) MustExecuteFullySilent(command Command) (pr *ProcessResult) {
 	pr, err := c.Execute(CommandConfig{
 		OutputStdout: false,
 		OutputStderr: false,
 		ConnectStdin: true,
-	}, name, args...)
+	}, command)
 	if err != nil {
 		panic(err)
 	}
@@ -203,8 +202,8 @@ func (c *Context) MustExecuteFullySilent(name string, args ...string) (pr *Proce
 }
 
 // Execute executes a system command according to given CommandConfig.
-func (c *Context) Execute(cc CommandConfig, name string, args ...string) (pr *ProcessResult, err error) {
-	cmd, pr := c.prepareCommand(cc, name, args...)
+func (c *Context) Execute(cc CommandConfig, command Command) (pr *ProcessResult, err error) {
+	cmd, pr := c.prepareCommand(cc, command)
 
 	if cc.Detach {
 		cmd.SysProcAttr = &syscall.SysProcAttr{
@@ -227,43 +226,43 @@ func (c *Context) Execute(cc CommandConfig, name string, args ...string) (pr *Pr
 
 // ExecuteDetachedDebug executes a system command, stdout and stderr are piped.
 // The command is executed in the background (detached).
-func (c *Context) ExecuteDetachedDebug(name string, args ...string) (pr *ProcessResult, err error) {
+func (c *Context) ExecuteDetachedDebug(command Command) (pr *ProcessResult, err error) {
 	pr, err = c.Execute(CommandConfig{
 		OutputStdout: true,
 		OutputStderr: true,
 		Detach:       true,
-	}, name, args...)
+	}, command)
 	return
 }
 
-// ExecuteDetachedSilent executes a  system command without outputting stdout (it is
+// ExecuteDetachedSilent executes a system command without outputting stdout (it is
 // still captured and can be retrieved using the returned ProcessResult).
 // The command is executed in the background (detached).
-func (c *Context) ExecuteDetachedSilent(name string, args ...string) (pr *ProcessResult, err error) {
+func (c *Context) ExecuteDetachedSilent(command Command) (pr *ProcessResult, err error) {
 	pr, err = c.Execute(CommandConfig{
 		OutputStdout: false,
 		OutputStderr: true,
 		Detach:       true,
-	}, name, args...)
+	}, command)
 	return
 }
 
 // ExecuteDetachedFullySilent executes a system command without outputting stdout or
 // stderr (both are still captured and can be retrieved using the returned ProcessResult).
 // The command is executed in the background (detached).
-func (c *Context) ExecuteDetachedFullySilent(name string, args ...string) (pr *ProcessResult, err error) {
+func (c *Context) ExecuteDetachedFullySilent(command Command) (pr *ProcessResult, err error) {
 	pr, err = c.Execute(CommandConfig{
 		OutputStdout: false,
 		OutputStderr: false,
 		Detach:       true,
-	}, name, args...)
+	}, command)
 	return
 }
 
-func (c Context) prepareCommand(cc CommandConfig, name string, args ...string) (*exec.Cmd, *ProcessResult) {
+func (c Context) prepareCommand(cc CommandConfig, command Command) (*exec.Cmd, *ProcessResult) {
 	pr := NewProcessResult()
 
-	cmd := exec.Command(name, args...)
+	cmd := exec.Command(command.Binary(), command.Args()...)
 	pr.Cmd = cmd
 
 	cmd.Dir = c.workingDir
@@ -299,126 +298,4 @@ func (c Context) WaitCmd(pr *ProcessResult) {
 	err := pr.Cmd.Wait()
 	pr.ProcessState = pr.Cmd.ProcessState
 	pr.ProcessError = err
-}
-
-// SplitCommand helper splits a string to command and arbitrarily many args.
-// Does handle bash-like escaping (\) and string delimiters " and '.
-func SplitCommand(input string) (command string, args []string) {
-	quotes := []string{`"`, `'`}
-
-	var (
-		ok     bool
-		length int
-		value  string
-		index  = 0
-	)
-	args = make([]string, 0)
-
-outerloop:
-	for {
-		if index >= len(input) {
-			break
-		}
-
-		ok, length, _ = parseWhitespace(input[index:])
-		if ok {
-			index += length
-			continue
-		}
-
-		for _, quote := range quotes {
-			ok, length, value = parseQuoted(input[index:], quote, `\`+quote)
-			if ok {
-				if command == "" {
-					command = value
-				} else {
-					args = append(args, value)
-				}
-				index += length
-				continue outerloop
-			}
-		}
-
-		ok, length, value = parseUnquoted(input[index:])
-		if ok {
-			if command == "" {
-				command = value
-			} else {
-				args = append(args, value)
-			}
-			index += length
-			continue
-		}
-	}
-	return
-}
-
-func parseQuoted(input, quoteString, escapeString string) (ok bool, length int, value string) {
-	if !strings.HasPrefix(input, quoteString) {
-		return
-	}
-
-	length = len(quoteString)
-	for {
-		if length >= len(input) {
-			break
-		}
-		// escaped quoteString? (continue!)
-		if strings.HasPrefix(input[length:], escapeString) {
-			length += len(escapeString)
-			value += quoteString
-		}
-		// quoteString (end!)
-		if strings.HasPrefix(input[length:], quoteString) {
-			length += len(quoteString)
-			ok = true
-			return
-		}
-
-		// otherwise inner content
-		value += input[length : length+1]
-		length++
-	}
-
-	return ok, length, value
-}
-
-func parseUnquoted(input string) (ok bool, length int, value string) {
-	length = 0
-	for {
-		if length >= len(input) {
-			ok = true
-			return
-		}
-		// whitespace (end!) // TODO all whitespace!
-		if strings.HasPrefix(input[length:], " ") {
-			length++
-			ok = true
-			return
-		}
-
-		// otherwise inner content
-		value += input[length : length+1]
-		length++
-	}
-}
-
-func parseWhitespace(input string) (ok bool, length int, value string) {
-	length = 0
-	for {
-		if length >= len(input) {
-			break
-		}
-		// no whitespace (end!) // TODO all whitespace!
-		if !strings.HasPrefix(input[length:], " ") {
-			ok = length > 0
-			return
-		}
-
-		// otherwise inner content (whitespace)
-		value += input[length : length+1]
-		length++
-	}
-
-	return ok, length, value
 }

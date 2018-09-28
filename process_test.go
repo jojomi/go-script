@@ -23,17 +23,17 @@ func TestProcessOutputErrorCatching(t *testing.T) {
 	sc := processContext()
 	setOutputBuffers(sc)
 
-	pr, err := sc.ExecuteFullySilent("./bin", "basic-output")
+	pr, err := sc.ExecuteFullySilent(LocalCommandFrom("./bin basic-output"))
 	assert.Nil(t, err)
 	assert.Equal(t, basicOutputStdout, pr.Output())
 	assert.Equal(t, basicOutputStderr, pr.Error())
 
-	pr, err = sc.ExecuteDebug("./bin", "basic-output")
+	pr, err = sc.ExecuteDebug(LocalCommandFrom("./bin basic-output"))
 	assert.Nil(t, err)
 	assert.Equal(t, basicOutputStdout, pr.Output())
 	assert.Equal(t, basicOutputStderr, pr.Error())
 
-	pr, err = sc.ExecuteSilent("./bin", "basic-output")
+	pr, err = sc.ExecuteSilent(LocalCommandFrom("./bin basic-output"))
 	assert.Nil(t, err)
 	assert.Equal(t, basicOutputStdout, pr.Output())
 	assert.Equal(t, basicOutputStderr, pr.Error())
@@ -43,19 +43,19 @@ func TestProcessStdoutStderr(t *testing.T) {
 	sc := processContext()
 
 	outBuffer, errBuffer := setOutputBuffers(sc)
-	_, err := sc.ExecuteFullySilent("./bin", "basic-output")
+	_, err := sc.ExecuteFullySilent(LocalCommandFrom("./bin basic-output"))
 	assert.Nil(t, err)
 	assert.Equal(t, "", outBuffer.String())
 	assert.Equal(t, "", errBuffer.String())
 
 	outBuffer, errBuffer = setOutputBuffers(sc)
-	_, err = sc.ExecuteSilent("./bin", "basic-output")
+	_, err = sc.ExecuteSilent(LocalCommandFrom("./bin basic-output"))
 	assert.Nil(t, err)
 	assert.Equal(t, "", outBuffer.String())
 	assert.Equal(t, basicOutputStderr, errBuffer.String())
 
 	outBuffer, errBuffer = setOutputBuffers(sc)
-	_, err = sc.ExecuteDebug("./bin", "basic-output")
+	_, err = sc.ExecuteDebug(LocalCommandFrom("./bin basic-output"))
 	assert.Nil(t, err)
 	assert.Equal(t, basicOutputStdout, outBuffer.String())
 	assert.Equal(t, basicOutputStderr, errBuffer.String())
@@ -66,7 +66,7 @@ func TestProcessStdin(t *testing.T) {
 	sc := processContext()
 
 	sc.stdin = strings.NewReader(input)
-	pr, err := sc.ExecuteFullySilent("./bin", "echo")
+	pr, err := sc.ExecuteFullySilent(LocalCommandFrom("./bin echo"))
 	assert.Nil(t, err)
 	assert.Equal(t, input+"\n", pr.Output())
 	assert.Equal(t, input+"\n", pr.Error())
@@ -74,39 +74,15 @@ func TestProcessStdin(t *testing.T) {
 
 /* COMMAND EXECUTION */
 
-func TestSplitCommand(t *testing.T) {
-	tests := []struct {
-		input   string
-		command string
-		args    []string
-	}{
-		// simple cases
-		{"ls -la", "ls", []string{"-la"}},
-		{"./bin exit-code-error second_ARG", "./bin", []string{"exit-code-error", "second_ARG"}},
-		// special cases
-		{"", "", []string{}},
-		// quoting
-		{`"quoted bin" "fir st" 'sec ond'`, "quoted bin", []string{"fir st", "sec ond"}},
-		{`bin -p  "fir st"   "sec ond"`, "bin", []string{"-p", "fir st", "sec ond"}},
-		{`"\"bin" 'par am"'`, "\"bin", []string{"par am\""}},
-	}
-
-	for _, test := range tests {
-		command, args := SplitCommand(test.input)
-		assert.Equal(t, test.command, command)
-		assert.Equal(t, test.args, args)
-	}
-}
-
 func TestProcessRunFailure(t *testing.T) {
 	sc := processContext()
-	_, err := sc.ExecuteFullySilent(nonExistingBinary)
+	_, err := sc.ExecuteFullySilent(LocalCommandFrom(nonExistingBinary))
 	assert.NotNil(t, err)
 }
 
 func TestProcessStateString(t *testing.T) {
 	sc := processContext()
-	pr, err := sc.ExecuteFullySilent("./bin", "basic-output")
+	pr, err := sc.ExecuteFullySilent(LocalCommandFrom("./bin basic-output"))
 	assert.Nil(t, err)
 	assert.Regexp(t, `^PID: \d+, Exited: true, Exit Code: 0, Success: true, User Time: \d+(\.\d+)?[mµ]?s$`, pr.StateString())
 }
@@ -114,33 +90,33 @@ func TestProcessStateString(t *testing.T) {
 func TestProcessMustExecuteDebug(t *testing.T) {
 	sc := processContext()
 	setOutputBuffers(sc)
-	pr := sc.MustExecuteDebug("./bin", "basic-output")
+	pr := sc.MustExecuteDebug(LocalCommandFrom("./bin basic-output"))
 	assert.NotNil(t, pr)
 
 	assert.Panics(t, func() {
-		sc.MustExecuteDebug(nonExistingBinary)
+		sc.MustExecuteDebug(LocalCommandFrom(nonExistingBinary))
 	})
 }
 
 func TestProcessMustExecuteSilent(t *testing.T) {
 	sc := processContext()
 	setOutputBuffers(sc)
-	pr := sc.MustExecuteSilent("./bin", "basic-output")
+	pr := sc.MustExecuteSilent(LocalCommandFrom("./bin basic-output"))
 	assert.NotNil(t, pr)
 
 	assert.Panics(t, func() {
-		sc.MustExecuteSilent(nonExistingBinary)
+		sc.MustExecuteSilent(LocalCommandFrom(nonExistingBinary))
 	})
 }
 
 func TestProcessMustExecuteFullySilent(t *testing.T) {
 	sc := processContext()
 	setOutputBuffers(sc)
-	pr := sc.MustExecuteFullySilent("./bin", "basic-output")
+	pr := sc.MustExecuteFullySilent(LocalCommandFrom("./bin basic-output"))
 	assert.NotNil(t, pr)
 
 	assert.Panics(t, func() {
-		sc.MustExecuteFullySilent(nonExistingBinary)
+		sc.MustExecuteFullySilent(LocalCommandFrom(nonExistingBinary))
 	})
 }
 
@@ -149,7 +125,7 @@ func TestProcessMustExecuteFullySilent(t *testing.T) {
 func TestProcessExecuteDetachedDebug(t *testing.T) {
 	sc := processContext()
 	stdout, stderr := setOutputBuffers(sc)
-	pr, err := sc.ExecuteDetachedDebug("./bin", "sleep")
+	pr, err := sc.ExecuteDetachedDebug(LocalCommandFrom("./bin sleep"))
 	assert.Nil(t, err)
 	assert.NotNil(t, pr)
 	assert.IsType(t, int(0), pr.Process.Pid, "Not seen a PID on a detached process. Did it even start?") // int
@@ -158,7 +134,7 @@ func TestProcessExecuteDetachedDebug(t *testing.T) {
 	assert.NotNil(t, exitErr)
 	assert.False(t, pr.Successful())
 
-	sc.ExecuteDebug("./bin", "basic-output")
+	sc.ExecuteDebug(LocalCommandFrom("./bin basic-output"))
 
 	sc.WaitCmd(pr)
 	assert.True(t, pr.Successful())
@@ -169,11 +145,11 @@ func TestProcessExecuteDetachedDebug(t *testing.T) {
 func TestProcessExecuteDetachedSilent(t *testing.T) {
 	sc := processContext()
 	stdout, stderr := setOutputBuffers(sc)
-	pr, err := sc.ExecuteDetachedSilent("./bin", "sleep")
+	pr, err := sc.ExecuteDetachedSilent(LocalCommandFrom("./bin sleep"))
 	assert.Nil(t, err)
 	assert.NotNil(t, pr)
 
-	sc.ExecuteDebug("./bin", "basic-output")
+	sc.ExecuteDebug(LocalCommandFrom("./bin basic-output"))
 
 	sc.WaitCmd(pr)
 	assert.Equal(t, basicOutputStdout, stdout.String())
@@ -183,11 +159,11 @@ func TestProcessExecuteDetachedSilent(t *testing.T) {
 func TestProcessExecuteDetachedFullySilent(t *testing.T) {
 	sc := processContext()
 	stdout, stderr := setOutputBuffers(sc)
-	pr, err := sc.ExecuteDetachedFullySilent("./bin", "sleep")
+	pr, err := sc.ExecuteDetachedFullySilent(LocalCommandFrom("./bin sleep"))
 	assert.Nil(t, err)
 	assert.NotNil(t, pr)
 
-	sc.ExecuteDebug("./bin", "basic-output")
+	sc.ExecuteDebug(LocalCommandFrom("./bin basic-output"))
 
 	sc.WaitCmd(pr)
 	assert.Equal(t, basicOutputStdout, stdout.String())
@@ -224,14 +200,14 @@ func TestProcessCommandPathFailurePanic(t *testing.T) {
 
 func TestProcessSuccessful(t *testing.T) {
 	sc := processContext()
-	pr, err := sc.ExecuteFullySilent(commandInPath)
+	pr, err := sc.ExecuteFullySilent((LocalCommandFrom(commandInPath)))
 	assert.Nil(t, err)
 	assert.Equal(t, true, pr.Successful())
 }
 
 func TestProcessExitCode(t *testing.T) {
 	sc := processContext()
-	pr, err := sc.ExecuteFullySilent("./bin", "exit-code-error")
+	pr, err := sc.ExecuteFullySilent(LocalCommandFrom("./bin exit-code-error"))
 	assert.Nil(t, err)
 	exitCode, exitErr := pr.ExitCode()
 	assert.Nil(t, exitErr)

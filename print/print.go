@@ -13,6 +13,11 @@ var (
 	ErrorChar = "✗"
 )
 
+var colorTitle = color.New(color.Bold, color.FgGreen)
+var printTitle = colorTitle.FprintFunc()
+var colorSubtitle = color.New(color.Bold, color.FgBlue)
+var printSubtitle = colorSubtitle.FprintFunc()
+
 var colorBold = color.New(color.Bold)
 var printBold = colorBold.FprintFunc()
 var printfBold = colorBold.FprintfFunc()
@@ -27,6 +32,20 @@ var colorError = color.New(color.Bold, color.FgRed)
 var printError = colorError.FprintFunc()
 var printfError = colorError.FprintfFunc()
 var printlnError = colorError.FprintlnFunc()
+
+// Title func
+func Title(input ...interface{}) {
+	printTitle(os.Stdout, "» ")
+	printTitle(os.Stdout, input...)
+	printTitle(os.Stdout, "\n")
+}
+
+// Subtitle func
+func Subtitle(input ...interface{}) {
+	printSubtitle(os.Stdout, "› ")
+	printSubtitle(os.Stdout, input...)
+	printSubtitle(os.Stdout, "\n")
+}
 
 // Bold func
 func Bold(input ...interface{}) {

@@ -1,7 +1,6 @@
 package script
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -57,8 +56,29 @@ func (l *LocalCommand) Args() []string {
 	return l.elements[1:]
 }
 
+func isWrapped(source, s string) bool {
+	return strings.HasPrefix(source, s) && strings.HasSuffix(source, s)
+}
+
 func (l *LocalCommand) String() string {
-	return fmt.Sprintf("%v", l.elements)
+	var b strings.Builder
+	for i, e := range l.elements {
+		if i > 0 {
+			b.WriteString(" ")
+		}
+		// contains double quotes? escape them!
+		if strings.Contains(e, `"`) {
+			e = strings.ReplaceAll(e, `"`, `\"`)
+		}
+		// contains Whitespace? wrap with double quotes
+		if strings.Contains(e, ` `) {
+			if !isWrapped(e, `"`) && !isWrapped(e, `'`) {
+				e = `"` + e + `"`
+			}
+		}
+		b.WriteString(e)
+	}
+	return b.String()
 }
 
 // SplitCommand helper splits a string to command and arbitrarily many args.

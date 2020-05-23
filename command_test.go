@@ -27,7 +27,37 @@ func TestLocalCommandAddAll(t *testing.T) {
 }
 
 func TestLocalCommandString(t *testing.T) {
+	tests := []struct {
+		Elements    []string
+		ValidOutput string
+	}{
+		{
+			Elements:    []string{"ls", "-al", "file"},
+			ValidOutput: `ls -al file`,
+		},
+		{
+			Elements:    []string{"ls", `my file.txt`},
+			ValidOutput: `ls "my file.txt"`,
+		},
+		{
+			Elements:    []string{"ls", `*.test`},
+			ValidOutput: `ls *.test`,
+		},
+		{
+			Elements:    []string{"ls", `weird".file`},
+			ValidOutput: `ls weird\".file`,
+		},
+		{
+			Elements:    []string{"ls", `'my custom file'`},
+			ValidOutput: `ls 'my custom file'`,
+		},
+	}
 
+	for _, test := range tests {
+		c := NewLocalCommand()
+		c.AddAll(test.Elements...)
+		assert.Equal(t, test.ValidOutput, c.String())
+	}
 }
 
 func TestSplitCommand(t *testing.T) {

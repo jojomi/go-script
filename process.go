@@ -266,7 +266,7 @@ func (c Context) prepareCommand(cc CommandConfig, command Command) (*exec.Cmd, *
 	pr.Cmd = cmd
 
 	cmd.Dir = c.workingDir
-	cmd.Env = c.getFullEnv()
+	cmd.Env = c.GetFullEnv()
 
 	if cc.RawStdout {
 		cmd.Stdout = os.Stdout

@@ -12,9 +12,12 @@ func TestEnvironment(t *testing.T) {
 	envKeyValue := envKey + "=" + envValue
 	sc := NewContext()
 
-	assert.False(t, inStringArray(sc.getFullEnv(), envKeyValue))
+	assert.False(t, inStringArray(sc.GetFullEnv(), envKeyValue))
+	assert.Empty(t, sc.GetCustomEnvValue(envKey))
+	assert.Empty(t, sc.GetCustomEnv())
 	sc.SetEnv(envKey, envValue)
-	assert.True(t, inStringArray(sc.getFullEnv(), envKeyValue))
+	assert.True(t, inStringArray(sc.GetCustomEnv(), envKeyValue))
+	assert.True(t, inStringArray(sc.GetFullEnv(), envKeyValue))
 }
 
 func inStringArray(haystack []string, needle string) bool {

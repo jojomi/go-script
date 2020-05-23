@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	script "github.com/jojomi/go-script"
+	script "github.com/jojomi/go-script/v2"
 )
 
 func main() {

@@ -1,4 +1,4 @@
-module github.com/jojomi/go-script
+module github.com/jojomi/go-script/v2
 
 go 1.14
 
@@ -6,7 +6,6 @@ require (
 	github.com/davecgh/go-spew v1.1.0 // indirect
 	github.com/fatih/color v1.5.0
 	github.com/gernest/wow v0.1.0
-	github.com/magefile/mage v1.9.0 // indirect
 	github.com/mattn/go-colorable v0.0.9 // indirect
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mattn/go-runewidth v0.0.9 // indirect

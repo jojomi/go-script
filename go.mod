@@ -3,6 +3,7 @@ module github.com/jojomi/go-script/v2
 go 1.16
 
 require (
+	github.com/AlecAivazis/survey/v2 v2.2.12
 	github.com/fatih/color v1.12.0
 	github.com/gernest/wow v0.1.0
 	github.com/mattn/go-isatty v0.0.12
@@ -14,6 +15,5 @@ require (
 	golang.org/x/sys v0.0.0-20210525143221-35b2ab0089ea // indirect
 	golang.org/x/term v0.0.0-20210503060354-a79de5458b56 // indirect
 	golang.org/x/text v0.3.6 // indirect
-	gopkg.in/AlecAivazis/survey.v1 v1.8.8
 	gopkg.in/cheggaaa/pb.v1 v1.0.28
 )

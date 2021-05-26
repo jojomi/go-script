@@ -3,33 +3,27 @@ package main
 import (
 	"fmt"
 
-	script "github.com/jojomi/go-script/v2"
+	"github.com/jojomi/go-script/v2/print"
 )
 
 func main() {
-	// make sure panics are printed in a human friendly way
-	/// defer script.RecoverFunc()
-
-	sc := script.NewContext()
-
-	fmt.Println()
-	sc.PrintlnBold("trying", "A")
+	print.Boldln("trying", "A")
 
 	fmt.Print("Yes,", "indeed ")
-	sc.PrintSuccessCheck("\n")
-	sc.PrintSuccessCheck(" oh yes!\n")
-	sc.PrintlnSuccess("It worked")
-	sc.PrintfSuccess("very %s\n", "well")
+	print.SuccessCheck("\n")
+	print.SuccessCheck(" oh yes!\n")
+	print.Successln("It worked")
+	print.Successf("very %s\n", "well")
 
 	fmt.Println()
-	sc.PrintlnBold("B too?")
+	print.Boldln("B too?")
 
 	fmt.Print("No,", "no ")
-	sc.PrintErrorCross("\n")
-	sc.PrintErrorCross(" oh no!\n")
-	sc.PrintError("It did")
-	sc.PrintfError(" not %s", "work")
-	sc.PrintlnError()
+	print.ErrorCross("\n")
+	print.ErrorCross(" oh no!\n")
+	print.Error("It did")
+	print.Errorf(" not %s", "work")
+	print.Errorln()
 
 	fmt.Println()
 	fmt.Println("I'm done.", "Really.")

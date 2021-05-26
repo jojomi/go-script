@@ -16,8 +16,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	name, args := script.SplitCommand("ls -lahr /")
-	pr, err := sc.ExecuteFullySilent(name, args...)
+	command := script.LocalCommandFrom("ls -lahr /")
+	pr, err := sc.ExecuteFullySilent(command)
 	if err != nil {
 		panic(err)
 	}

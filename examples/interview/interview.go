@@ -14,6 +14,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	shouldReallyContinue, err := interview.ConfirmNoDefault("Should we continue?")
+	if !shouldReallyContinue {
+		os.Exit(2)
+	}
+
 	level, err := interview.ChooseOneString("What is your expertise level?", []string{"Novice", "Learner", "Professional"})
 	if err != nil {
 		return

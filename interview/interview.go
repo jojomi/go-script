@@ -1,6 +1,9 @@
 package interview
 
 import (
+	"fmt"
+	"strings"
+
 	survey "github.com/AlecAivazis/survey/v2"
 )
 
@@ -11,6 +14,32 @@ func Confirm(question string, defaultValue bool) (result bool, err error) {
 		Default: defaultValue,
 	}
 	err = survey.AskOne(prompt, &result, nil)
+	return
+}
+
+func ConfirmNoDefault(question string) (result bool, err error) {
+	q := &survey.Input{
+		Message: question + " (y/n)",
+	}
+	v := func(val interface{}) error {
+		str := strings.ToLower(val.(string))
+		if str != "y" && str != "yes" && str != "n" && str != "no" {
+			return fmt.Errorf("Invalid input. Please type \"y\" for yes or \"n\" for no.")
+		}
+		return nil
+	}
+	var res string
+	err = survey.AskOne(q, &res, survey.WithValidator(v))
+
+	if strings.ToLower(res) == "y" || strings.ToLower(res) == "yes" {
+		result = true
+		return
+	}
+	if strings.ToLower(res) == "n" || strings.ToLower(res) == "no" {
+		result = false
+		return
+	}
+
 	return
 }
 

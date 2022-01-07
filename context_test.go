@@ -20,8 +20,15 @@ func TestIsUserRoot(t *testing.T) {
 }
 
 func TestSetWorkingDirTemp(t *testing.T) {
+	assert := assert.New(t)
+
 	sc := NewContext()
 	err := sc.SetWorkingDirTemp()
-	assert.Nil(t, err)
-	assert.Regexp(t, `/tmp/\d+`, sc.WorkingDir())
+	assert.Nil(err)
+	wd1 := sc.WorkingDir()
+	err = sc.SetWorkingDirTemp()
+	assert.Nil(err)
+	wd2 := sc.WorkingDir()
+
+	assert.NotEqual(wd1, wd2)
 }

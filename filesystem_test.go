@@ -255,6 +255,21 @@ func TestTempDir(t *testing.T) {
 	assert.Equal(t, content, r)
 }
 
+func TestMustExpandHome(t *testing.T) {
+	assert := assert.New(t)
+
+	sc := NewContext()
+
+	// no expansion required
+	p := "/home/jojomi/~/weird/path"
+	assert.Equal(p, sc.MustExpandHome(p))
+
+	// expansion required
+	p = "~/subdir/deep"
+	assert.NotEqual(p, sc.MustExpandHome(p))
+	assert.Less(len(p), len(sc.MustExpandHome(p)))
+}
+
 func makeFile(c *Context, filename, content string) {
 	afero.WriteFile(c.fs, filename, []byte(content), myFileFileMode)
 }

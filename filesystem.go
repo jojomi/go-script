@@ -2,6 +2,7 @@ package script
 
 import (
 	"os"
+	"os/user"
 	"path"
 	"path/filepath"
 	"strings"
@@ -198,4 +199,23 @@ func (c *Context) CopyDir(src, dst string) error {
 	}
 	err := CopyTree(c.fs, src, dst, options)
 	return err
+}
+
+// MustExpandHome replaces a tilde (~) in a path with the current user's home dir.
+func (c *Context) MustExpandHome(path string) string {
+	if path == "~" {
+		return c.mustGetHomeDir()
+	}
+	if strings.HasPrefix(path, "~/") {
+		return c.mustGetHomeDir() + path[2:]
+	}
+	return path
+}
+
+func (c *Context) mustGetHomeDir() string {
+	usr, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
+	return usr.HomeDir
 }

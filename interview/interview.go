@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	survey "github.com/AlecAivazis/survey/v2"
+	"github.com/AlecAivazis/survey/v2"
 )
 
-// Confirm func
+// Confirm allows querying for confirmation with a default value that is used when no answer is typed.
 func Confirm(question string, defaultValue bool) (result bool, err error) {
 	prompt := &survey.Confirm{
 		Message: question,
@@ -17,6 +17,7 @@ func Confirm(question string, defaultValue bool) (result bool, err error) {
 	return
 }
 
+// ConfirmNoDefault allows querying for confirmation without a default value, so the user needs to answer the question explicitly.
 func ConfirmNoDefault(question string) (result bool, err error) {
 	q := &survey.Input{
 		Message: question + " (y/n)",
@@ -43,7 +44,7 @@ func ConfirmNoDefault(question string) (result bool, err error) {
 	return
 }
 
-// ChooseOneString func
+// ChooseOneString queries the user to choose one string from a list of strings
 func ChooseOneString(question string, options []string) (result string, err error) {
 	prompt := &survey.Select{
 		Message: question,
@@ -53,7 +54,7 @@ func ChooseOneString(question string, options []string) (result string, err erro
 	return
 }
 
-// ChooseMultiStrings func
+// ChooseMultiStrings queries the user to choose from a list of strings allowing multiple selection
 func ChooseMultiStrings(question string, options []string) (results []string, err error) {
 	prompt := &survey.MultiSelect{
 		Message: question,

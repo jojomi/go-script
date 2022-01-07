@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"syscall"
 )
 
@@ -45,6 +46,12 @@ func NewProcessResult() *ProcessResult {
 // by this struct.
 func (pr *ProcessResult) Output() string {
 	return pr.stdoutBuffer.String()
+}
+
+// TrimmedOutput returns a string representation of the output of the process denoted
+// by this struct with surrounding whitespace removed.
+func (pr *ProcessResult) TrimmedOutput() string {
+	return strings.TrimSpace(pr.Output())
 }
 
 // Error returns a string representation of the stderr output of the process denoted

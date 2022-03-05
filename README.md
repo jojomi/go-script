@@ -17,7 +17,6 @@ This library strives for a good test coverage even though it is not always easy 
 ## Methods
 
 [![GoDoc](https://godoc.org/github.com/jojomi/go-script?status.svg)](https://godoc.org/github.com/jojomi/go-script)
-![![CircleCI](https://circleci.com/gh/jojomi/go-script.svg?style=svg)](https://circleci.com/gh/jojomi/go-script)
 [![Coverage Status](https://coveralls.io/repos/github/jojomi/go-script/badge.svg?branch=master)](https://coveralls.io/github/jojomi/go-script?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/jojomi/go-script)](https://goreportcard.com/report/github.com/jojomi/go-script)
 

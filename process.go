@@ -218,6 +218,9 @@ func (c *Context) Execute(cc CommandConfig, command Command) (pr *ProcessResult,
 		}
 	}
 
+	// logging
+	c.logCommand(command)
+
 	err = cmd.Start()
 	if err != nil {
 		return

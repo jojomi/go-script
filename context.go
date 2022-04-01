@@ -1,6 +1,7 @@
 package script
 
 import (
+	"fmt"
 	"io"
 	"os"
 
@@ -19,6 +20,8 @@ type Context struct {
 	stderr     io.Writer
 	stdin      io.Reader
 	isTTY      bool
+
+	commandLogger *CommandLogger
 }
 
 // NewContext returns a pointer to a new Context.
@@ -67,4 +70,22 @@ func (c *Context) IsUserRoot() bool {
 // IsTerminal returns if this program is run inside an interactive terminal
 func (c Context) IsTerminal() bool {
 	return !(os.Getenv("TERM") == "dumb" || (!isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd())))
+}
+
+// SetCommandLogger sets a custom logger for commands being executed
+func (c *Context) SetCommandLogger(commandLogger *CommandLogger) *Context {
+	c.commandLogger = commandLogger
+	return c
+}
+
+func (c *Context) logCommand(command Command) {
+	if c.commandLogger == nil {
+		return
+	}
+
+	l := *c.commandLogger
+	err := l(*c, command)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "could not log command execution: %s", err.Error())
+	}
 }

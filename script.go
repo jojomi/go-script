@@ -9,5 +9,6 @@ import (
 var RecoverFunc = func() {
 	if r := recover(); r != nil {
 		os.Stderr.WriteString(fmt.Sprintf("%v\n", r))
+		os.Exit(1)
 	}
 }

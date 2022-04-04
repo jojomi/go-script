@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	isatty "github.com/mattn/go-isatty"
 	"github.com/spf13/afero"
@@ -20,8 +21,10 @@ type Context struct {
 	stderr     io.Writer
 	stdin      io.Reader
 	isTTY      bool
+	start      time.Time
 
 	commandLogger *CommandLogger
+	logKey        string
 }
 
 // NewContext returns a pointer to a new Context.
@@ -33,6 +36,8 @@ func NewContext() (context *Context) {
 		stdout: os.Stdout,
 		stderr: os.Stderr,
 		stdin:  os.Stdin,
+
+		start: time.Now(),
 	}
 
 	cwd, err := os.Getwd()
@@ -78,7 +83,19 @@ func (c *Context) SetCommandLogger(commandLogger *CommandLogger) *Context {
 	return c
 }
 
-func (c *Context) logCommand(command Command) {
+// SetLogKey defines the current key for logging.
+func (c *Context) SetLogKey(logKey string) *Context {
+	c.logKey = logKey
+	return c
+}
+
+// LogKey returns the current key for logging.
+func (c *Context) LogKey() string {
+	return c.logKey
+}
+
+// LogCommand logs a command being executed. Automatically called by the Exec* function family.
+func (c *Context) LogCommand(command Command) {
 	if c.commandLogger == nil {
 		return
 	}
@@ -88,4 +105,8 @@ func (c *Context) logCommand(command Command) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "could not log command execution: %s", err.Error())
 	}
+}
+
+func (c *Context) GetStart() time.Time {
+	return c.start
 }

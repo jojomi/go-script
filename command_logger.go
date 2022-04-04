@@ -2,6 +2,7 @@ package script
 
 import (
 	"fmt"
+	"github.com/jojomi/strtpl"
 	"os"
 )
 
@@ -21,15 +22,25 @@ func EnvFileCommandLogger(envKey string) *CommandLogger {
 	return &f
 }
 
+func TemplateFilename(sc Context, filename string) string {
+	logKey := sc.LogKey()
+	if logKey == "" {
+		return filename
+	}
+	return strtpl.MustEval(filename, map[string]any{
+		"logKey": logKey,
+		"start":  sc.GetStart(),
+	})
+}
+
 func fileCommandLoggerWithFlags(filename string, flags int) CommandLogger {
 	return func(sc Context, c Command) error {
-		f, err := os.OpenFile(filename, flags, 0600)
+		f, err := os.OpenFile(TemplateFilename(sc, filename), flags, 0600)
 		if err != nil {
 			return err
 		}
 		defer f.Close()
 		message := getCommandLogMessage(sc, c)
-		fmt.Println("writing", message)
 		_, err = f.WriteString(message)
 		if err != nil {
 			return err

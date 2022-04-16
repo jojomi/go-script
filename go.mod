@@ -6,6 +6,8 @@ require (
 	github.com/AlecAivazis/survey/v2 v2.2.12
 	github.com/fatih/color v1.12.0
 	github.com/gernest/wow v0.1.0
+	github.com/jojomi/go-script v2.1.0+incompatible
+	github.com/jojomi/strtpl v0.4.1
 	github.com/mattn/go-isatty v0.0.14
 	github.com/spf13/afero v1.8.2
 	github.com/stretchr/testify v1.7.0
@@ -14,7 +16,6 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/jojomi/strtpl v0.4.1 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect

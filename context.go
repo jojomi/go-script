@@ -6,7 +6,6 @@ import (
 	"os"
 	"time"
 
-	isatty "github.com/mattn/go-isatty"
 	"github.com/spf13/afero"
 )
 
@@ -70,11 +69,6 @@ func (c *Context) SetWorkingDirTemp() error {
 // IsUserRoot checks if a user is root priviledged (Linux and Mac only? Windows?)
 func (c *Context) IsUserRoot() bool {
 	return os.Geteuid() == 0
-}
-
-// IsTerminal returns if this program is run inside an interactive terminal
-func (c Context) IsTerminal() bool {
-	return !(os.Getenv("TERM") == "dumb" || (!isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd())))
 }
 
 // SetCommandLogger sets a custom logger for commands being executed

@@ -48,20 +48,30 @@ func (l *LocalCommand) Args() []string {
 	return l.elements[1:]
 }
 
+func (l *LocalCommand) StringNoQuoteBinary() string {
+	return l.string(false)
+}
+
 func (l *LocalCommand) String() string {
+	return l.string(true)
+}
+
+func (l *LocalCommand) string(quoteFirst bool) string {
 	var b strings.Builder
 	for i, e := range l.elements {
 		if i > 0 {
 			b.WriteString(" ")
 		}
-		// contains double quotes? escape them!
-		if strings.Contains(e, `"`) {
-			e = strings.ReplaceAll(e, `"`, `\"`)
-		}
-		// contains Whitespace? wrap with double quotes
-		if strings.Contains(e, ` `) {
-			if !isWrapped(e, `"`) && !isWrapped(e, `'`) {
-				e = `"` + e + `"`
+		if i > 0 || quoteFirst {
+			// contains double quotes? escape them!
+			if strings.Contains(e, `"`) {
+				e = strings.ReplaceAll(e, `"`, `\"`)
+			}
+			// contains Whitespace? wrap with double quotes
+			if strings.Contains(e, ` `) {
+				if !isWrapped(e, `"`) && !isWrapped(e, `'`) {
+					e = `"` + e + `"`
+				}
 			}
 		}
 		b.WriteString(e)

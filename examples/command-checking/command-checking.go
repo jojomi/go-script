@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	script "github.com/jojomi/go-script/v2"
+	"github.com/jojomi/go-script/v2"
 )
 
 func main() {

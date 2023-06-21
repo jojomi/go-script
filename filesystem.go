@@ -86,16 +86,19 @@ func (c *Context) AbsPath(filename string) string {
 }
 
 // AbsPathSep is a variant of AbsPath that always adds a trailing path separator
+// @deprecated
 func (c *Context) AbsPathSep(filename string) string {
 	return c.WithTrailingPathSep(c.AbsPath(filename))
 }
 
 // WithoutTrailingPathSep trims trailing os.PathSeparator from a string
+// @deprecated
 func (c *Context) WithoutTrailingPathSep(input string) string {
 	return strings.TrimRight(input, string(os.PathSeparator))
 }
 
 // WithTrailingPathSep adds a trailing os.PathSeparator to a string if it is missing
+// @deprecated
 func (c *Context) WithTrailingPathSep(input string) string {
 	if strings.HasSuffix(input, string(os.PathSeparator)) {
 		return input

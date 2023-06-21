@@ -1,71 +1,77 @@
 package script
 
 import (
-	"io/ioutil"
+	"fmt"
+	"github.com/spf13/afero"
 	"os"
-	"regexp"
+	"path"
 	"strings"
+
+	"github.com/mitchellh/go-homedir"
 )
 
-func (c Context) ReplaceInFile(filename, searchRegexp, replacement string) error {
-	absoluteFilename := c.AbsPath(filename)
-
-	// read file to string
-	b, err := ioutil.ReadFile(absoluteFilename)
-	if err != nil {
-		return err
-	}
-
-	// replace
-	re, err := regexp.Compile(searchRegexp)
-	if err != nil {
-		return err
-	}
-	b = re.ReplaceAll(b, []byte(replacement))
-
-	// write back
-	file, err := os.Open(absoluteFilename)
-	if err != nil {
-		return err
-	}
-	fileInfo, err := file.Stat()
-	if err != nil {
-		return err
-	}
-	err = ioutil.WriteFile(absoluteFilename, b, fileInfo.Mode())
-	if err != nil {
-		return err
-	}
-	return nil
+// File is a file in the filesystem.
+type File struct {
+	context           *Context
+	path              string
+	createPermissions os.FileMode
+	fs                afero.Fs
 }
 
-// FileHasContent func
-func (c Context) FileHasContent(filename, search string) (bool, error) {
-	fileContents, err := ioutil.ReadFile(c.AbsPath(filename))
-	if err != nil {
-		return false, err
+func (c *Context) FileAt(path string) File {
+	// replace home dir path
+	path, _ = homedir.Expand(path)
+
+	return File{
+		path:              path,
+		context:           c,
+		createPermissions: 0640,
+		fs:                afero.OsFs{},
 	}
-	return strings.Contains(string(fileContents), search), nil
 }
 
-// FileHasContentRegexp func
-func (c Context) FileHasContentRegexp(filename, searchRegexp string) (bool, error) {
-	fileContents, err := ioutil.ReadFile(c.AbsPath(filename))
-	if err != nil {
-		return false, err
-	}
-	r, err := regexp.Compile(searchRegexp)
-	if err != nil {
-		return false, err
-	}
-	results := r.FindStringIndex(string(fileContents))
-	return len(results) > 0, nil
+// CreatePermissions allows you to define the FileMode used when creating this file (if it did not exist).
+func (x File) CreatePermissions(perm os.FileMode) File {
+	x.createPermissions = perm
+	return x
 }
 
-/*func (c Context) FileComment(filename, searchRegexp string) {
-
+func (x File) Exists() bool {
+	fi, err := x.context.fs.Stat(x.AbsPath())
+	return !os.IsNotExist(err) && !fi.IsDir()
 }
 
-func (c Context) FileUncomment(filename, searchRegexp string) {
+func (x File) AssertExists() File {
+	if !x.Exists() {
+		panic(fmt.Errorf("file %s should have existed", x))
+	}
+	return x
+}
 
-}*/
+func (x File) IsAbs() bool {
+	return x.context.AbsPath(x.path) == x.path
+}
+
+func (x File) IsRel() bool {
+	return !x.IsAbs()
+}
+
+func (x File) AbsPath() string {
+	return x.context.AbsPath(x.path)
+}
+
+func (x File) IsHidden() bool {
+	return strings.HasPrefix(x.Filename(), ".")
+}
+
+func (x File) SafeChars() File {
+	return File{}
+}
+
+func (x File) String() string {
+	return x.path
+}
+
+func (x File) Filename() string {
+	return path.Base(x.path)
+}

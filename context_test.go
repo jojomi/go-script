@@ -11,7 +11,7 @@ func TestWorkingDir(t *testing.T) {
 	workingDir := "/tmp/working-dir"
 	sc := NewContext()
 	sc.SetWorkingDir(workingDir)
-	assert.Equal(t, workingDir, sc.WorkingDir(), fmt.Sprintf("Expected working directory not set (should be %s)", workingDir))
+	assert.Equal(t, workingDir, sc.WorkingDirPath(), fmt.Sprintf("Expected working directory not set (should be %s)", workingDir))
 }
 
 func TestIsUserRoot(t *testing.T) {
@@ -25,10 +25,10 @@ func TestSetWorkingDirTemp(t *testing.T) {
 	sc := NewContext()
 	err := sc.SetWorkingDirTemp()
 	assert.Nil(err)
-	wd1 := sc.WorkingDir()
+	wd1 := sc.WorkingDirPath()
 	err = sc.SetWorkingDirTemp()
 	assert.Nil(err)
-	wd2 := sc.WorkingDir()
+	wd2 := sc.WorkingDirPath()
 
 	assert.NotEqual(wd1, wd2)
 }

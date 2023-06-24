@@ -27,9 +27,9 @@ func (x FileExtension) String() string {
 }
 
 var (
-	Pdf = FileExtensionFrom("pdf")
-	Jpg = FileExtensionFrom("Jpg")
-	Png = FileExtensionFrom("Png")
-	Log = FileExtensionFrom("log")
-	Zip = FileExtensionFrom("zip")
+	ExtPdf = FileExtensionFrom("pdf")
+	ExtJpg = FileExtensionFrom("jpg")
+	ExtPng = FileExtensionFrom("png")
+	ExtLog = FileExtensionFrom("log")
+	ExtZip = FileExtensionFrom("zip")
 )

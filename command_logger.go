@@ -50,5 +50,5 @@ func fileCommandLoggerWithFlags(filename string, flags int) CommandLogger {
 }
 
 func getCommandLogMessage(sc Context, c Command) string {
-	return fmt.Sprintf("%s: %s\n", sc.WorkingDir(), c.String())
+	return fmt.Sprintf("%s: %s\n", sc.WorkingDirPath(), c.String())
 }

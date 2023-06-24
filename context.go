@@ -52,7 +52,11 @@ func (c *Context) SetWorkingDir(workingDir string) {
 }
 
 // WorkingDir retrieves the current working dir
-func (c *Context) WorkingDir() string {
+func (c *Context) WorkingDir() Dir {
+	return c.DirAt(c.workingDir)
+}
+
+func (c *Context) WorkingDirPath() string {
 	return c.workingDir
 }
 

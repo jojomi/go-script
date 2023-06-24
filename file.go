@@ -35,8 +35,8 @@ func (c *Context) FileAt(path string) File {
 	}
 }
 
-// CreatePermissions allows you to define the FileMode used when creating this file (if it did not exist).
-func (x File) CreatePermissions(perm os.FileMode) File {
+// SetCreatePermissions allows you to define the FileMode used when creating this file (if it did not exist).
+func (x File) SetCreatePermissions(perm os.FileMode) File {
 	x.createPermissions = perm
 	return x
 }
@@ -77,7 +77,7 @@ func (x File) AbsPath() string {
 }
 
 func (x File) RelPath() string {
-	result, err := filepath.Rel(x.context.WorkingDir(), x.AbsPath())
+	result, err := filepath.Rel(x.context.WorkingDirPath(), x.AbsPath())
 	if err != nil {
 		return x.AbsPath()
 	}
@@ -98,4 +98,8 @@ func (x File) String() string {
 
 func (x File) Filename() string {
 	return path.Base(x.path)
+}
+
+func (x File) OpenStandard() error {
+	return browser.OpenFile(x.AbsPath())
 }

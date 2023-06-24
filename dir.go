@@ -69,7 +69,7 @@ func (x Dir) RelPath() string {
 		return x.path
 	}
 
-	result, err := filepath.Rel(x.context.WorkingDir(), x.AbsPath())
+	result, err := filepath.Rel(x.context.WorkingDirPath(), x.AbsPath())
 	if err != nil {
 		return ""
 	}

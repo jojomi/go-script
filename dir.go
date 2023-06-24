@@ -16,6 +16,10 @@ type Dir struct {
 	fs      afero.Fs
 }
 
+func DirAt(path string) Dir {
+	return NewContext().DirAt(path)
+}
+
 func (c *Context) DirAt(path string) Dir {
 	// replace home dir path
 	path, _ = homedir.Expand(path)
@@ -44,6 +48,10 @@ func (x Dir) Exists() bool {
 	return !os.IsNotExist(err) && fi.IsDir()
 }
 
+func (x Dir) NotExists() bool {
+	return !x.Exists()
+}
+
 func (x Dir) IsAbs() bool {
 	return x.context.AbsPath(x.path) == x.path
 }
@@ -54,6 +62,18 @@ func (x Dir) IsRel() bool {
 
 func (x Dir) AbsPath() string {
 	return x.context.AbsPath(x.path)
+}
+
+func (x Dir) RelPath() string {
+	if x.IsRel() {
+		return x.path
+	}
+
+	result, err := filepath.Rel(x.context.WorkingDir(), x.AbsPath())
+	if err != nil {
+		return ""
+	}
+	return result
 }
 
 func (x Dir) MustFileAt(relativePath string) File {

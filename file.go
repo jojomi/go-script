@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/afero"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/mitchellh/go-homedir"
@@ -16,6 +17,10 @@ type File struct {
 	path              string
 	createPermissions os.FileMode
 	fs                afero.Fs
+}
+
+func FileAt(path string) File {
+	return NewContext().FileAt(path)
 }
 
 func (c *Context) FileAt(path string) File {
@@ -48,6 +53,17 @@ func (x File) AssertExists() File {
 	return x
 }
 
+func (x File) NotExists() bool {
+	return !x.Exists()
+}
+
+func (x File) AssertNotExists() File {
+	if !x.NotExists() {
+		panic(fmt.Errorf("file %s should not have existed", x))
+	}
+	return x
+}
+
 func (x File) IsAbs() bool {
 	return x.context.AbsPath(x.path) == x.path
 }
@@ -60,12 +76,20 @@ func (x File) AbsPath() string {
 	return x.context.AbsPath(x.path)
 }
 
+func (x File) RelPath() string {
+	result, err := filepath.Rel(x.context.WorkingDir(), x.AbsPath())
+	if err != nil {
+		return x.AbsPath()
+	}
+	return result
+}
+
 func (x File) IsHidden() bool {
 	return strings.HasPrefix(x.Filename(), ".")
 }
 
-func (x File) SafeChars() File {
-	return File{}
+func (x File) Equals(otherFile File) bool {
+	return x.AbsPath() == otherFile.AbsPath()
 }
 
 func (x File) String() string {

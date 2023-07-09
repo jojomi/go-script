@@ -2,6 +2,7 @@ package script
 
 import (
 	"fmt"
+	"github.com/jojomi/gofs"
 	"io"
 	"os"
 	"time"
@@ -52,8 +53,8 @@ func (c *Context) SetWorkingDir(workingDir string) {
 }
 
 // WorkingDir retrieves the current working dir
-func (c *Context) WorkingDir() Dir {
-	return c.DirAt(c.workingDir)
+func (c *Context) WorkingDir() gofs.Dir {
+	return gofs.DirAt(c.workingDir)
 }
 
 func (c *Context) WorkingDirPath() string {
